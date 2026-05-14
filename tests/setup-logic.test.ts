@@ -53,6 +53,11 @@ describe("setup hardware logic", () => {
     expect(diskHardwareCheck(40, 512, "C:", true).ok).toBe(false);
   });
 
+  it("passes machines that meet the memory and disk gates", () => {
+    expect(memoryHardwareCheck(32, 20, true).ok).toBe(true);
+    expect(diskHardwareCheck(120, 1024, "C:", true).ok).toBe(true);
+  });
+
   it("parses Ollama tags JSON without depending on CLI column output", () => {
     const tags = parseOllamaTags(JSON.stringify({ models: [{ name: "gemma4-26b-8k" }, { name: "openai/qwen2.5-coder:14b" }] }));
 

@@ -31,3 +31,4 @@ npm run package:win
 - Avoid floating Docker image tags.
 - Do not add terminal-first instructions to `USER_MANUAL.md`; put developer commands in `DEVELOPER.md`.
 - Add or update tests for safety-sensitive runtime behavior.
+- Refresh screenshots in `landing/assets/` when UI copy or visible dashboard state changes.

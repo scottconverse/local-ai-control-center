@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.2.2");
+    expect(packageJson.version).toBe("0.2.3");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -145,5 +145,11 @@ describe("service launcher scripts", () => {
     expect(app).toContain('aria-label="Refresh status"');
     expect(app).toContain('title="OpenHands Agent"');
     expect(app).toContain('partition="persist:openhands"');
+  });
+
+  it("documents screenshot refresh expectations for contributors", () => {
+    const contributing = read("CONTRIBUTING.md");
+
+    expect(contributing).toContain("Refresh screenshots in `landing/assets/` when UI copy or visible dashboard state changes.");
   });
 });

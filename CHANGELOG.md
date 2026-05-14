@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3 - 2026-05-14
+
+- Refreshed the dashboard screenshot used by the README and landing page so it no longer contains stale internal UI copy.
+- Added memory and disk pass-path coverage to the setup logic tests.
+- Added a contributor rule to refresh screenshots when visible UI copy changes.
+
 ## 0.2.2 - 2026-05-14
 
 - Added more behavioral tests for setup edge cases: multi-GPU selection, missing `nvidia-smi`, and malformed Ollama tags JSON.
