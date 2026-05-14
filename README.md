@@ -41,6 +41,16 @@ Full walkthrough:
 USER_MANUAL.md
 ```
 
+## Marketing Landing Page
+
+Static landing page:
+
+```text
+landing\index.html
+```
+
+The page is intentionally honest about the current product state: useful local Windows control center today, still being hardened for wider distribution.
+
 ## Local Services
 
 OpenHands runs at `http://localhost:3000`.

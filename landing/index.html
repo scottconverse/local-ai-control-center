@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local AI Control Center</title>
+    <meta
+      name="description"
+      content="A Windows desktop control center for running Ollama, OpenHands, and Open WebUI locally without living in the terminal."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Local AI Control Center home">
+        <span class="brand-mark">AI</span>
+        <span>Local AI Control Center</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#why">Why</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#status">Status</a>
+        <a href="#download">Download</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <img
+          class="hero-image"
+          src="./assets/control-center-dashboard.png"
+          alt="Local AI Control Center dashboard showing Docker, Ollama, OpenHands, Open WebUI, models, and local runner status"
+        />
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="eyebrow">Local-first AI operations for Windows</p>
+          <h1>Run your local AI stack from one clear desktop control center.</h1>
+          <p class="hero-copy">
+            Local AI Control Center brings Ollama, OpenHands, Open WebUI, workspace access, health checks,
+            and local test runs into a single GUI, so you can use local models without managing a pile of
+            terminal commands.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.1.0">
+              Download v0.1.0
+            </a>
+            <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
+              View GitHub Repo
+            </a>
+          </div>
+          <p class="hero-note">Honest status: early Windows-only product. Useful today, still under active hardening.</p>
+        </div>
+      </section>
+
+      <section id="why" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">The problem</p>
+          <h2>Local AI is powerful. Running it is still too fiddly.</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <h3>Less terminal juggling</h3>
+            <p>
+              Start and stop OpenHands and Open WebUI from a dashboard instead of remembering Docker commands,
+              container names, and ports.
+            </p>
+          </article>
+          <article>
+            <h3>Health you can scan</h3>
+            <p>
+              See Docker, Ollama, OpenHands, and Open WebUI status at a glance, with local models listed in the
+              same place.
+            </p>
+          </article>
+          <article>
+            <h3>Agent work stays visible</h3>
+            <p>
+              The writable workspace is explicit. Open it from the app, know where files live, and keep agent
+              edits contained.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="workflow" class="split-section">
+        <div>
+          <p class="eyebrow">What it controls</p>
+          <h2>A practical shell around the tools you already chose.</h2>
+          <p>
+            This is not a new model runtime or a hosted AI service. It is a local desktop control layer for the
+            stack: Ollama for models, OpenHands for file and project work, and Open WebUI for everyday chat.
+          </p>
+        </div>
+        <div class="workflow-list" aria-label="Product workflow">
+          <div><span>1</span> Check Docker and Ollama health</div>
+          <div><span>2</span> Start OpenHands or Open WebUI</div>
+          <div><span>3</span> Open the agent workspace</div>
+          <div><span>4</span> Run local build and smoke checks</div>
+        </div>
+      </section>
+
+      <section id="status" class="section muted">
+        <div class="section-heading">
+          <p class="eyebrow">Current product status</p>
+          <h2>Honest about what works and what comes next.</h2>
+        </div>
+        <div class="status-grid">
+          <article>
+            <h3>Working now</h3>
+            <ul>
+              <li>Windows desktop GUI with embedded local service views</li>
+              <li>OpenHands and Open WebUI launch controls</li>
+              <li>Localhost-only Docker port binding</li>
+              <li>Local runner with build, type, and smoke checks</li>
+            </ul>
+          </article>
+          <article>
+            <h3>Next hardening pass</h3>
+            <ul>
+              <li>Docker binary discovery instead of fixed install-path assumptions</li>
+              <li>Prerequisite setup flow for non-developer users</li>
+              <li>Meaningful unit tests replacing placeholder coverage</li>
+              <li>Pinned Open WebUI image version</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="download" class="cta-section">
+        <div>
+          <p class="eyebrow">Local-first, not cloud-first</p>
+          <h2>Keep the models and the work on your machine.</h2>
+          <p>
+            Download the current Windows build, inspect the repo, or fork it for your own local AI workstation.
+          </p>
+        </div>
+        <div class="cta-actions">
+          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.1.0">
+            Get the release
+          </a>
+          <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
+            Read the source
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Local AI Control Center</span>
+      <span>Windows-only v0.1.0 · Local services bind to 127.0.0.1</span>
+    </footer>
+  </body>
+</html>
