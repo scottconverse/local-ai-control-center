@@ -36,19 +36,19 @@
           <p class="eyebrow">Local-first AI operations for Windows</p>
           <h1>Run your local AI stack from one clear desktop control center.</h1>
           <p class="hero-copy">
-            Local AI Control Center brings Ollama, OpenHands, Open WebUI, workspace access, health checks,
-            and local test runs into a single GUI, so you can use local models without managing a pile of
-            terminal commands.
+            Local AI Control Center brings first-run setup, hardware checks, Ollama, OpenHands, Open WebUI,
+            workspace access, health checks, and local test runs into a single GUI, so you can use local
+            models without managing a pile of terminal commands.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.1.3">
-              Download v0.1.3
+            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.2.0">
+              Download v0.2.0
             </a>
             <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
               View GitHub Repo
             </a>
           </div>
-          <p class="hero-note">Honest status: early Windows-only product. Useful today, still under active hardening.</p>
+          <p class="hero-note">Honest status: Windows-only and built for hefty local AI machines: roughly 16 GB available VRAM, 32 GB RAM, and room for model downloads.</p>
         </div>
       </section>
 
@@ -66,10 +66,10 @@
             </p>
           </article>
           <article>
-            <h3>Health you can scan</h3>
+            <h3>First-run setup</h3>
             <p>
-              See Docker, Ollama, OpenHands, and Open WebUI status at a glance, with local models listed in the
-              same place.
+              Scan CPU, RAM, disk, GPU, and VRAM, then install Docker Desktop and Ollama and pull required
+              models from the GUI.
             </p>
           </article>
           <article>
@@ -92,10 +92,10 @@
           </p>
         </div>
         <div class="workflow-list" aria-label="Product workflow">
-          <div><span>1</span> Check Docker and Ollama health</div>
-          <div><span>2</span> Start OpenHands or Open WebUI</div>
-          <div><span>3</span> Open the agent workspace</div>
-          <div><span>4</span> Run local build and smoke checks</div>
+          <div><span>1</span> Scan machine fit and missing prerequisites</div>
+          <div><span>2</span> Install Docker Desktop and Ollama if needed</div>
+          <div><span>3</span> Pull models and Docker images</div>
+          <div><span>4</span> Start OpenHands, Open WebUI, and run smoke checks</div>
         </div>
       </section>
 
@@ -113,15 +113,17 @@
               <li>Localhost-only Docker port binding</li>
               <li>Local runner with build, type, and smoke checks</li>
               <li>Docker command discovery and pinned Open WebUI image</li>
+              <li>First-run setup wizard with hardware and VRAM checks</li>
+              <li>GUI setup actions for Docker, Ollama, models, and images</li>
             </ul>
           </article>
           <article>
             <h3>Next hardening pass</h3>
             <ul>
-              <li>Prerequisite setup flow for non-developer users</li>
-              <li>Clear GUI errors for missing Docker, Ollama, or occupied ports</li>
-              <li>Progress feedback for first-run Docker pulls</li>
-              <li>Inline model configuration and service data visibility</li>
+              <li>Streaming progress logs for long model and Docker pulls</li>
+              <li>Port-conflict detection before service start</li>
+              <li>Full application-logic unit tests for IPC and component state</li>
+              <li>Inline model switching and service data reset controls</li>
             </ul>
           </article>
         </div>
@@ -136,7 +138,7 @@
           </p>
         </div>
         <div class="cta-actions">
-          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.1.3">
+          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.2.0">
             Get the release
           </a>
           <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
@@ -148,7 +150,7 @@
 
     <footer>
       <span>Local AI Control Center</span>
-      <span>Windows-only v0.1.3 - Local services bind to 127.0.0.1</span>
+      <span>Windows-only v0.2.0 - Local services bind to 127.0.0.1</span>
     </footer>
   </body>
 </html>

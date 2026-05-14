@@ -6,6 +6,10 @@ It is Windows-only for now and binds local service ports to `127.0.0.1` so OpenH
 
 It gives you one GUI for:
 
+- Running a first-run setup wizard.
+- Reading the machine's CPU, RAM, disk, GPU, and VRAM.
+- Installing Docker Desktop and Ollama from the app when possible.
+- Pulling required Ollama models and Docker images.
 - Starting and stopping OpenHands.
 - Starting and stopping Open WebUI.
 - Checking Docker, Ollama, and service health.
@@ -15,7 +19,17 @@ It gives you one GUI for:
 
 ## Start The App
 
-From the app folder, double-click the no-terminal launcher:
+Download the latest portable Windows release, then open the app. On first launch, start with the **First Run** tab.
+
+The first-run wizard checks whether the machine can comfortably run the stack. For the recommended OpenHands-ready local models, plan on:
+
+- Windows 10/11.
+- NVIDIA GPU with roughly 16 GB VRAM available.
+- 32 GB system RAM.
+- 80 GB free disk space.
+- Internet access for first-time downloads.
+
+From the source app folder, double-click the no-terminal launcher:
 
 ```text
 Launch Local AI Control Center.vbs
@@ -32,6 +46,8 @@ First-time setup:
 ```text
 Install Local AI Control Center.cmd
 ```
+
+That source setup helper installs Node dependencies and builds the app. End users who download the release EXE should use the in-app **First Run** wizard instead.
 
 ## User Manual
 
@@ -60,6 +76,8 @@ Open WebUI runs at `http://localhost:8080`.
 Ollama runs at `http://127.0.0.1:11434`.
 
 Docker is resolved from `DOCKER_EXE`, `DOCKER_PATH`, the system `PATH`, or the standard Docker Desktop install location.
+
+The setup wizard can install Docker Desktop and Ollama through `winget` when Windows has it available. If `winget` is missing, the app opens the official download page so the user can install the missing tool without using a terminal.
 
 ## OpenHands
 

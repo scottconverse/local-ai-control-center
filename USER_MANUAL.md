@@ -6,6 +6,7 @@ Local AI Control Center is a Windows desktop app for managing a local AI worksta
 
 | Area | What it does | When to use it |
 |---|---|---|
+| First Run | Scans hardware and prepares required tools, models, and images | Use this on a new machine |
 | Dashboard | Shows health, services, models, workspace, and local runner controls | Start here every session |
 | OpenHands | Agent workspace for files, commands, and project work | Coding, debugging, scripts, project edits |
 | Open WebUI | Chat interface for local Ollama models | Drafting, brainstorming, summarizing, model chat |
@@ -29,16 +30,17 @@ Docker is resolved from `DOCKER_EXE`, `DOCKER_PATH`, the system `PATH`, or the s
 
 ## Quick Start
 
-1. Open Docker Desktop.
-2. Wait for Docker Desktop to show that the engine is running.
-3. Make sure Ollama is running.
-4. In the app folder, double-click:
+1. Open Local AI Control Center.
+2. Go to **First Run**.
+3. Review the hardware scan.
+4. Use the setup buttons to install missing tools, pull models, pull images, and start services.
+5. When setup is ready, use the Dashboard for normal daily work.
+
+If you are running from the source folder, double-click:
 
 ```text
 Launch Local AI Control Center.vbs
 ```
-
-5. In the Dashboard, click **Start** for OpenHands or Open WebUI.
 
 If you want to see startup logs, use:
 
@@ -52,6 +54,35 @@ Direct service URLs:
 |---|---|
 | OpenHands | `http://localhost:3000` |
 | Open WebUI | `http://localhost:8080` |
+
+## First Run Setup
+
+The first-run wizard is for a machine that does not already have the local AI stack installed.
+
+It checks:
+
+| Check | Why it matters |
+|---|---|
+| CPU | Confirms the app can read system details |
+| System RAM | The recommended stack expects about 32 GB RAM |
+| Disk | Model files and Docker images need substantial local space |
+| GPU / VRAM | OpenHands-ready local models need roughly 16 GB available NVIDIA VRAM |
+| Docker Desktop | Required to run OpenHands and Open WebUI |
+| Ollama | Required to run local models |
+| Models | Required before OpenHands and Open WebUI can use local inference |
+| Docker images | Required before the service containers can start |
+
+The wizard can start these setup actions from the app:
+
+| Action | What happens |
+|---|---|
+| Install Docker | Uses `winget` when available, or opens the official Docker Desktop download page |
+| Install Ollama | Uses `winget` when available, or opens the official Ollama download page |
+| Pull Models | Downloads `openai/qwen2.5-coder:14b` and `gemma4-26b-8k` through Ollama |
+| Pull Images | Downloads the OpenHands and Open WebUI Docker images |
+| Start Both Services | Starts OpenHands and Open WebUI after prerequisites are ready |
+
+Docker Desktop may ask for administrator approval or a restart. That is normal on Windows.
 
 ## Choosing The Right Tool
 
@@ -192,6 +223,10 @@ Use it when:
 
 | Problem | What to try |
 |---|---|
+| First Run says VRAM is too low | Close games, renderers, and other GPU-heavy apps, then refresh |
+| First Run says disk is too low | Free space on the drive where the app is installed before pulling models |
+| Docker install asks for approval | Approve the Windows installer prompt; Docker Desktop may require a restart |
+| `winget` is not found | Use the official download page the app opens |
 | Docker is not found | Set `DOCKER_EXE` to your Docker-compatible executable path and restart the app |
 | Ollama is not reachable | Start Ollama and confirm it is listening on port `11434` |
 | OpenHands says it is starting | Wait a minute after first launch; Docker may still be starting the container |

@@ -5,22 +5,26 @@ import {
   Bot,
   Boxes,
   CheckCircle2,
+  Cpu,
+  Download,
   ExternalLink,
   FolderOpen,
   Globe,
+  HardDrive,
   Loader2,
   MessageSquare,
   MonitorCog,
   Play,
   RefreshCw,
+  Server,
   Square,
   TerminalSquare,
   XCircle
 } from "lucide-react";
-import type { LocalAIStatus, ServiceName } from "./global";
+import type { LocalAIStatus, ServiceName, SetupAction, SetupStatus } from "./global";
 import "./styles.css";
 
-type View = "dashboard" | "openhands" | "openwebui";
+type View = "setup" | "dashboard" | "openhands" | "openwebui";
 
 const fallbackStatus: LocalAIStatus = {
   docker: { ok: false, version: "Checking...", executable: "docker.exe", message: "Checking Docker..." },
@@ -38,6 +42,27 @@ const fallbackStatus: LocalAIStatus = {
     openWebUiChatModel: "gemma4-26b-8k",
     openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
   }
+};
+
+const fallbackSetup: SetupStatus = {
+  ready: false,
+  summary: "Checking setup...",
+  hardware: {
+    cpu: { ok: true, severity: "warn", label: "CPU", value: "Checking...", detail: "Reading CPU details." },
+    memory: { ok: false, severity: "warn", label: "System RAM", value: "Checking...", detail: "Reading installed memory." },
+    disk: { ok: false, severity: "warn", label: "Disk", value: "Checking...", detail: "Reading free disk space." },
+    gpu: { ok: false, severity: "warn", label: "GPU / VRAM", value: "Checking...", detail: "Reading NVIDIA VRAM." }
+  },
+  tools: {
+    winget: { ok: false, message: "Checking winget..." },
+    docker: { ok: false, running: false, message: "Checking Docker..." },
+    ollama: { ok: false, running: false, message: "Checking Ollama..." }
+  },
+  assets: {
+    models: [],
+    dockerImages: []
+  },
+  nextSteps: ["Checking this machine."]
 };
 
 function StatusPill({ ok, label }: { ok: boolean; label: string }) {
@@ -67,9 +92,45 @@ function EmptyWebFrame({ title, url, starting }: { title: string; url: string; s
   );
 }
 
+function SetupCheckCard({
+  icon,
+  label,
+  value,
+  detail,
+  severity
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  detail: string;
+  severity: "ok" | "warn" | "fail";
+}) {
+  return (
+    <article className={`setup-check ${severity}`}>
+      <div className="setup-check-icon">{icon}</div>
+      <div>
+        <h4>{label}</h4>
+        <strong>{value}</strong>
+        <p>{detail}</p>
+      </div>
+    </article>
+  );
+}
+
+function AssetRow({ name, installed }: { name: string; installed: boolean }) {
+  return (
+    <li className={installed ? "asset-ok" : "asset-missing"}>
+      {installed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+      <span>{name}</span>
+      <strong>{installed ? "Ready" : "Missing"}</strong>
+    </li>
+  );
+}
+
 function App() {
-  const [view, setView] = useState<View>("dashboard");
+  const [view, setView] = useState<View>("setup");
   const [status, setStatus] = useState<LocalAIStatus>(fallbackStatus);
+  const [setup, setSetup] = useState<SetupStatus>(fallbackSetup);
   const [busy, setBusy] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState("Ready.");
   const [operationDetail, setOperationDetail] = useState("");
@@ -86,14 +147,34 @@ function App() {
   async function refresh() {
     setBusy("refresh");
     try {
-      const nextStatus = await window.localAI.getStatus();
+      const [nextStatus, nextSetup] = await Promise.all([window.localAI.getStatus(), window.localAI.getSetupStatus()]);
       setStatus(nextStatus);
+      setSetup(nextSetup);
       setLastMessage("Status refreshed.");
     } catch (error) {
       setLastMessage(error instanceof Error ? error.message : "Could not refresh status.");
     } finally {
       setBusy(null);
     }
+  }
+
+  async function runSetup(action: SetupAction) {
+    setBusy(`setup-${action}`);
+    const labels: Record<SetupAction, string> = {
+      "install-docker": "Installing Docker Desktop",
+      "install-ollama": "Installing Ollama",
+      "pull-models": "Pulling Ollama models",
+      "pull-images": "Pulling Docker images",
+      "start-services": "Starting local services"
+    };
+    setLastMessage(`${labels[action]}...`);
+    setOperationDetail("This setup step can take several minutes. Keep this window open and approve any Windows installer prompts.");
+    const result = await window.localAI.runSetupAction(action);
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n\n");
+    setTestOutput(output || `${labels[action]} finished with no output.`);
+    setLastMessage(result.ok ? `${labels[action]} complete.` : `${labels[action]} needs attention.`);
+    setOperationDetail(result.ok ? "" : output || "Check the setup step output below.");
+    await refresh();
   }
 
   async function start(service: ServiceName) {
@@ -142,6 +223,10 @@ function App() {
     : !status.ollama.ok
       ? status.ollama.message
       : "";
+  const missingModels = setup.assets.models.some((model) => !model.installed);
+  const missingImages = setup.assets.dockerImages.some((image) => !image.installed);
+  const hardwareReady = setup.hardware.memory.ok && setup.hardware.disk.ok && setup.hardware.gpu.ok;
+  const setupActionRunning = busy?.startsWith("setup-");
 
   return (
     <div className="app-shell">
@@ -157,6 +242,10 @@ function App() {
         </div>
 
         <nav>
+          <button className={view === "setup" ? "active" : ""} onClick={() => setView("setup")}>
+            <Download size={19} />
+            First Run
+          </button>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}>
             <MonitorCog size={19} />
             Dashboard
@@ -187,6 +276,7 @@ function App() {
         <header className="topbar">
           <div>
             <h2>
+              {view === "setup" && "First Run Setup"}
               {view === "dashboard" && "Dashboard"}
               {view === "openhands" && "OpenHands Agent"}
               {view === "openwebui" && "Open WebUI Chat"}
@@ -203,6 +293,147 @@ function App() {
           <div className={`notice ${!status.docker.ok || !status.ollama.ok ? "error" : ""}`}>
             {operationDetail || prerequisiteMessage}
           </div>
+        )}
+
+        {view === "setup" && (
+          <section className="setup-page">
+            <div className="setup-hero">
+              <div>
+                <p className="eyebrow">No-terminal onboarding</p>
+                <h3>Make this machine ready for local agent work.</h3>
+                <p>
+                  The setup wizard reads the machine first, then installs or prepares the pieces Local AI Control Center needs:
+                  Docker Desktop, Ollama, local models, and Docker images.
+                </p>
+              </div>
+              <div className={`setup-verdict ${setup.ready ? "ready" : hardwareReady ? "partial" : "blocked"}`}>
+                <strong>{setup.ready ? "Ready" : hardwareReady ? "Setup needed" : "Hardware check"}</strong>
+                <span>{setup.summary}</span>
+              </div>
+            </div>
+
+            <div className="setup-grid">
+              <SetupCheckCard
+                icon={<Cpu size={22} />}
+                label={setup.hardware.cpu.label}
+                value={setup.hardware.cpu.value}
+                detail={setup.hardware.cpu.detail}
+                severity={setup.hardware.cpu.severity}
+              />
+              <SetupCheckCard
+                icon={<Boxes size={22} />}
+                label={setup.hardware.memory.label}
+                value={setup.hardware.memory.value}
+                detail={setup.hardware.memory.detail}
+                severity={setup.hardware.memory.severity}
+              />
+              <SetupCheckCard
+                icon={<HardDrive size={22} />}
+                label={setup.hardware.disk.label}
+                value={setup.hardware.disk.value}
+                detail={setup.hardware.disk.detail}
+                severity={setup.hardware.disk.severity}
+              />
+              <SetupCheckCard
+                icon={<MonitorCog size={22} />}
+                label={setup.hardware.gpu.label}
+                value={setup.hardware.gpu.value}
+                detail={setup.hardware.gpu.detail}
+                severity={setup.hardware.gpu.severity}
+              />
+            </div>
+
+            <div className="grid two">
+              <article className="panel">
+                <div className="panel-title">
+                  <Server size={22} />
+                  <div>
+                    <h3>Install Runtime Tools</h3>
+                    <p>Use Windows installers from inside the app. Docker Desktop may ask for administrator approval.</p>
+                  </div>
+                </div>
+                <ul className="setup-list">
+                  <li>
+                    <span>Installer helper</span>
+                    <strong>{setup.tools.winget.message}</strong>
+                  </li>
+                  <li>
+                    <span>Docker Desktop</span>
+                    <strong>{setup.tools.docker.message}</strong>
+                  </li>
+                  <li>
+                    <span>Ollama</span>
+                    <strong>{setup.tools.ollama.message}</strong>
+                  </li>
+                </ul>
+                <div className="button-row">
+                  <button onClick={() => runSetup("install-docker")} disabled={!!busy || setup.tools.docker.running}>
+                    {busy === "setup-install-docker" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
+                    Install Docker
+                  </button>
+                  <button onClick={() => runSetup("install-ollama")} disabled={!!busy || setup.tools.ollama.running}>
+                    {busy === "setup-install-ollama" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
+                    Install Ollama
+                  </button>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-title">
+                  <Boxes size={22} />
+                  <div>
+                    <h3>Prepare Models And Images</h3>
+                    <p>Download the local model files and container images before starting services.</p>
+                  </div>
+                </div>
+                <ul className="asset-list">
+                  {setup.assets.models.map((model) => (
+                    <AssetRow key={model.name} name={model.name} installed={model.installed} />
+                  ))}
+                  {setup.assets.dockerImages.map((image) => (
+                    <AssetRow key={image.name} name={image.name} installed={image.installed} />
+                  ))}
+                </ul>
+                <div className="button-row">
+                  <button onClick={() => runSetup("pull-models")} disabled={!!busy || !setup.tools.ollama.running || !missingModels}>
+                    {busy === "setup-pull-models" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
+                    Pull Models
+                  </button>
+                  <button onClick={() => runSetup("pull-images")} disabled={!!busy || !setup.tools.docker.running || !missingImages}>
+                    {busy === "setup-pull-images" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
+                    Pull Images
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            <article className="panel runner-panel">
+              <div className="panel-title">
+                <CheckCircle2 size={22} />
+                <div>
+                  <h3>Finish Setup</h3>
+                  <p>When the checks are ready, start both services and run the local smoke check.</p>
+                </div>
+              </div>
+              <ol className="steps">
+                {setup.nextSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <div className="button-row">
+                <button className="primary" onClick={() => runSetup("start-services")} disabled={!!busy || !hardwareReady || !setup.tools.docker.running || !setup.tools.ollama.running || missingModels || missingImages}>
+                  {busy === "setup-start-services" ? <Loader2 className="spin" size={17} /> : <Play size={17} />}
+                  Start Both Services
+                </button>
+                <button onClick={() => runTests("runner")} disabled={!!busy}>
+                  {busy === "test-runner" ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
+                  Run Local Runner
+                </button>
+              </div>
+              {setupActionRunning && <p className="setup-footnote">Installer and download steps can take a while. Output appears below when the step finishes.</p>}
+              <pre className="test-output">{testOutput}</pre>
+            </article>
+          </section>
         )}
 
         {view === "dashboard" && (

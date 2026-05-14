@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 - 2026-05-14
+
+- Added a first-run setup wizard that scans CPU, system RAM, disk space, NVIDIA GPU, and available VRAM before setup.
+- Added GUI setup actions for installing Docker Desktop and Ollama through `winget` when available, with official-download fallback.
+- Added GUI preparation steps for pulling required Ollama models and Docker images.
+- Added setup finish flow to start OpenHands and Open WebUI after prerequisites and assets are ready.
+- Added regression checks for setup wizard IPC, hardware requirements, and user-facing setup documentation.
+
 ## 0.1.3 - 2026-05-14
 
 - Rewrote `USER_MANUAL.md` in a more professional, human-friendly format with tables, clearer workflows, and fewer raw command blocks.

@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.1.3");
+    expect(packageJson.version).toBe("0.2.0");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -88,5 +88,41 @@ describe("service launcher scripts", () => {
     expect(mainProcess).toContain("openWebUiImage");
     expect(app).toContain("status.config.openHandsModel");
     expect(app).toContain("status.config.openWebUiImage");
+  });
+
+  it("adds first-run setup IPC for hardware checks and install actions", () => {
+    const mainProcess = read("electron/main.ts");
+    const preload = read("electron/preload.ts");
+    const globalTypes = read("src/global.d.ts");
+
+    expect(mainProcess).toContain("minimumTotalVramGb = 16");
+    expect(mainProcess).toContain("getSetupStatus");
+    expect(mainProcess).toContain("installWithWinget");
+    expect(mainProcess).toContain("pullRequiredModels");
+    expect(preload).toContain("getSetupStatus");
+    expect(preload).toContain("runSetupAction");
+    expect(globalTypes).toContain("SetupStatus");
+  });
+
+  it("keeps the setup wizard visible and hardware-gated in the renderer", () => {
+    const app = read("src/App.tsx");
+
+    expect(app).toContain('type View = "setup"');
+    expect(app).toContain("First Run Setup");
+    expect(app).toContain("GPU / VRAM");
+    expect(app).toContain("Pull Models");
+    expect(app).toContain("Start Both Services");
+  });
+
+  it("documents first-run setup and machine requirements for public users", () => {
+    const readme = read("README.md");
+    const manual = read("USER_MANUAL.md");
+    const landing = read("landing/index.html");
+
+    expect(readme).toContain("NVIDIA GPU with roughly 16 GB VRAM available");
+    expect(manual).toContain("## First Run Setup");
+    expect(manual).toContain("| GPU / VRAM |");
+    expect(landing).toContain("First-run setup wizard with hardware and VRAM checks");
+    expect(landing).not.toContain("Prerequisite setup flow for non-developer users");
   });
 });
