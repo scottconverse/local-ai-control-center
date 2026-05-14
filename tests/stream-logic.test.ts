@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendCappedOutput, commandExitMessage, commandLine, commandResult, formatSetupOutput, timeoutMessage } from "../src/stream-logic";
+import { appendCappedOutput, commandExitMessage, commandLine, commandResult, commandTimedOutResult, formatSetupOutput, missingScriptResult, timeoutMessage } from "../src/stream-logic";
 
 describe("streaming setup log logic", () => {
   it("formats command lines and timeout messages", () => {
@@ -10,8 +10,21 @@ describe("streaming setup log logic", () => {
   it("maps process close codes to command results", () => {
     expect(commandResult(0, ["ok\n"], [""])).toEqual({ ok: true, stdout: "ok", stderr: "" });
     expect(commandResult(2, [""], ["bad\n"])).toEqual({ ok: false, stdout: "", stderr: "bad" });
+    expect(commandTimedOutResult(10_000, ["partial\n"], ["warn\n"])).toEqual({
+      ok: false,
+      stdout: "partial",
+      stderr: "warn\nTimed out after 10 seconds."
+    });
     expect(commandExitMessage(0)).toBe("Command completed.\n");
     expect(commandExitMessage(2)).toBe("Command exited with code 2.\n");
+  });
+
+  it("reports missing setup scripts clearly before spawning PowerShell", () => {
+    expect(missingScriptResult("C:/app/missing.ps1")).toEqual({
+      ok: false,
+      stdout: "",
+      stderr: "Setup script was not found: C:/app/missing.ps1"
+    });
   });
 
   it("caps live output from the tail so recent progress remains visible", () => {

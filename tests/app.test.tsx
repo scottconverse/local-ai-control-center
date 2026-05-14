@@ -2,7 +2,7 @@ import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App } from "../src/App";
+import { App, describeModel } from "../src/App";
 import type { LocalAIStatus, SetupStatus } from "../src/global";
 
 const readyStatus: LocalAIStatus = {
@@ -207,5 +207,14 @@ describe("App first-run behavior", () => {
     expect(container.textContent).not.toContain("Restart required");
 
     root.unmount();
+  });
+});
+
+describe("model descriptions", () => {
+  it("describes default and non-default local models", () => {
+    expect(describeModel("openai/qwen2.5-coder:14b")).toBe("Code and project work");
+    expect(describeModel("llama3:8b")).toBe("General local chat and reasoning");
+    expect(describeModel("nomic-embed-text:latest")).toBe("Embedding/search model");
+    expect(describeModel("custom-model:latest")).toBe("Installed local model");
   });
 });

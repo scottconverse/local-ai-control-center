@@ -72,6 +72,16 @@ const modelDescriptions: Record<string, string> = {
   "gemma4-26b-8k": "General chat"
 };
 
+export function describeModel(model: string): string {
+  const lower = model.toLowerCase();
+  if (modelDescriptions[model]) return modelDescriptions[model];
+  if (lower.includes("coder") || lower.includes("code") || lower.includes("qwen")) return "Likely useful for code and project work";
+  if (lower.includes("llama") || lower.includes("mistral") || lower.includes("gemma")) return "General local chat and reasoning";
+  if (lower.includes("embed")) return "Embedding/search model";
+  if (lower.includes("vision") || lower.includes("vl")) return "Vision or image-capable model";
+  return "Installed local model";
+}
+
 function StatusPill({ ok, label, message, onClick }: { ok: boolean; label: string; message: string; onClick: () => void }) {
   return (
     <button className={`status-pill ${ok ? "ok" : "warn"}`} title={ok ? `${label} is ready.` : message} onClick={onClick}>
@@ -713,7 +723,7 @@ export function App() {
                     models.map((model) => (
                       <span key={model}>
                         <strong>{model}</strong>
-                        {modelDescriptions[model] && <small>{modelDescriptions[model]}</small>}
+                        <small>{describeModel(model)}</small>
                       </span>
                     ))
                   ) : (

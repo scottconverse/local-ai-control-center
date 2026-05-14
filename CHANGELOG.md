@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.3 - 2026-05-14
+
+- Broadened model descriptions so common non-default local models get useful identity labels in the Dashboard.
+- Added stream/process helper coverage for timeout result mapping and missing setup scripts before PowerShell launch.
+- Renamed the user documentation regression test to match its expanded override/runtime scope.
+- Updated the landing page next-pass list to reflect shipped model metadata heuristics.
+
 ## 0.4.2 - 2026-05-14
 
 - Cleared restart-required badges after a successful service data reset.

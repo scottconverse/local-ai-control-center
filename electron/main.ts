@@ -27,7 +27,7 @@ import {
   parseOllamaListNames,
   parseOllamaTags
 } from "./setup-logic";
-import { commandExitMessage, commandLine, commandResult, timeoutMessage, type CommandResult, type SetupOutput } from "../src/stream-logic";
+import { commandExitMessage, commandLine, commandResult, missingScriptResult, timeoutMessage, type CommandResult, type SetupOutput } from "../src/stream-logic";
 
 const execFileAsync = promisify(execFile);
 
@@ -242,6 +242,9 @@ async function portAvailable(port: number, containerName: string): Promise<Comma
 
 async function startPowerShellScript(scriptName: string, sender?: Electron.WebContents, action = "start-services"): Promise<CommandResult> {
   const scriptPath = path.join(appRoot, scriptName);
+  if (!existsSync(scriptPath)) {
+    return missingScriptResult(scriptPath);
+  }
   const config = await readConfig();
   const configEnv = {
     OPENHANDS_MODEL: config.openHandsModel,

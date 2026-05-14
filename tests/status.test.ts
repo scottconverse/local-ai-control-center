@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.4.2");
+    expect(packageJson.version).toBe("0.4.3");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -210,7 +210,7 @@ describe("service launcher scripts", () => {
     expect(developer).toContain("Do not add Electron, Node-only, or filesystem dependencies to this module");
   });
 
-  it("documents Ollama overrides and background pull behavior", () => {
+  it("documents environment overrides and runtime behavior for users", () => {
     const manual = read("USER_MANUAL.md");
     const developer = read("DEVELOPER.md");
 

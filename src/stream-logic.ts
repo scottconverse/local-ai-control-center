@@ -30,6 +30,18 @@ export function commandResult(code: number | null, stdout: string[], stderr: str
   };
 }
 
+export function commandTimedOutResult(timeout: number, stdout: string[], stderr: string[]): CommandResult {
+  return commandResult(null, stdout, [...stderr, timeoutMessage(timeout)]);
+}
+
+export function missingScriptResult(scriptPath: string): CommandResult {
+  return {
+    ok: false,
+    stdout: "",
+    stderr: `Setup script was not found: ${scriptPath}`
+  };
+}
+
 export function appendCappedOutput(current: string, next: string, cap = 40_000): string {
   return `${current}${next}`.slice(-cap);
 }
