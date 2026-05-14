@@ -7,7 +7,7 @@ describe("local AI setup", () => {
   });
 
   it("keeps the agent workspace path explicit", () => {
-    const path = "C:\\Users\\scott\\Desktop\\local-ai-agent\\agent-workspace";
+    const path = ".\\agent-workspace";
     expect(path).toContain("agent-workspace");
   });
 });

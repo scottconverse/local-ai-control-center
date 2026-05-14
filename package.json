@@ -48,7 +48,7 @@
     "wait-on": "^9.0.3"
   },
   "build": {
-    "appId": "com.scottconverse.localaicontrolcenter",
+    "appId": "app.localai.controlcenter",
     "productName": "Local AI Control Center",
     "directories": {
       "output": "release"

@@ -1,8 +1,25 @@
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function check(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-  if (!response.ok) {
-    throw new Error(`${url} returned ${response.status}`);
+  let lastError = "";
+
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (response.ok) {
+        return;
+      }
+      lastError = `${url} returned ${response.status}`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+
+    await sleep(2_000);
   }
+
+  throw new Error(`${url} did not become healthy. Last error: ${lastError}`);
 }
 
 async function main() {

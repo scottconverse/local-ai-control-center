@@ -9,7 +9,7 @@ The local runner is the source of truth.
 Use:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.vbs
+Run Local Test Runner.vbs
 ```
 
 This runs the test suite locally and opens the latest log in Notepad when it finishes.
@@ -17,7 +17,7 @@ This runs the test suite locally and opens the latest log in Notepad when it fin
 Visible terminal version:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.cmd
+Run Local Test Runner.cmd
 ```
 
 ## What It Runs
@@ -50,11 +50,11 @@ This asks the local `qwen2.5-coder:14b` model to return a known token.
 Logs are written to:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\test-results
+.\test-results
 ```
 
 The latest run is always copied to:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\test-results\latest.log
+.\test-results\latest.log
 ```

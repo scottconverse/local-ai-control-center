@@ -12,16 +12,16 @@ The system runs locally on your machine. Docker hosts the apps, and Ollama hosts
 1. Open Docker Desktop.
 2. Wait for Docker Desktop to say the engine is running.
 3. Make sure Ollama is running.
-4. Double-click the no-terminal launcher:
+4. In the app folder, double-click the no-terminal launcher:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Launch Local AI Control Center.vbs
+Launch Local AI Control Center.vbs
 ```
 
 If you want to see startup logs, double-click the visible launcher instead:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Start Local AI Control Center.cmd
+Start Local AI Control Center.cmd
 ```
 
 5. Use the Dashboard buttons to start OpenHands and Open WebUI.
@@ -110,7 +110,7 @@ If the OpenHands UI asks you to configure the model manually, use those exact va
 OpenHands can read and write this local folder:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\agent-workspace
+.\agent-workspace
 ```
 
 Inside OpenHands, that same folder appears as:
@@ -124,7 +124,7 @@ Put files or projects there when you want OpenHands to work on them.
 Example:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\agent-workspace\my-project
+.\agent-workspace\my-project
 ```
 
 Then tell OpenHands:
@@ -206,26 +206,24 @@ You do not need these commands for normal use. They are here for troubleshooting
 Start the desktop app:
 
 ```text
-Double-click C:\Users\scott\Desktop\local-ai-agent\Start Local AI Control Center.cmd
+Double-click Start Local AI Control Center.cmd
 ```
 
 First-time install:
 
 ```text
-Double-click C:\Users\scott\Desktop\local-ai-agent\Install Local AI Control Center.cmd
+Double-click Install Local AI Control Center.cmd
 ```
 
 Manual OpenHands start:
 
 ```powershell
-cd C:\Users\scott\Desktop\local-ai-agent
 .\start-openhands.ps1
 ```
 
 Manual Open WebUI start:
 
 ```powershell
-cd C:\Users\scott\Desktop\local-ai-agent
 .\start-openwebui.ps1
 ```
 
@@ -253,7 +251,6 @@ docker stop open-webui
 Restart both:
 
 ```powershell
-cd C:\Users\scott\Desktop\local-ai-agent
 .\start-openhands.ps1
 .\start-openwebui.ps1
 ```
@@ -279,7 +276,7 @@ GitHub Actions is disabled while the account is out of Actions minutes. Use the 
 Double-click:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.vbs
+Run Local Test Runner.vbs
 ```
 
 The runner opens the latest log in Notepad when it finishes.
@@ -362,11 +359,11 @@ Expected result: a JSON list of local Ollama models.
 ## Files In This Setup
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\README.md
-C:\Users\scott\Desktop\local-ai-agent\USER_MANUAL.md
-C:\Users\scott\Desktop\local-ai-agent\start-openhands.ps1
-C:\Users\scott\Desktop\local-ai-agent\start-openwebui.ps1
-C:\Users\scott\Desktop\local-ai-agent\agent-workspace
+README.md
+USER_MANUAL.md
+start-openhands.ps1
+start-openwebui.ps1
+agent-workspace
 ```
 
 ## Recommended First Test
@@ -374,7 +371,7 @@ C:\Users\scott\Desktop\local-ai-agent\agent-workspace
 Put a small text file in:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\agent-workspace
+.\agent-workspace
 ```
 
 Then ask OpenHands:

@@ -13,32 +13,30 @@ It gives you one GUI for:
 
 ## Start The App
 
-Best no-terminal launcher:
+From the app folder, double-click the no-terminal launcher:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Launch Local AI Control Center.vbs
+Launch Local AI Control Center.vbs
 ```
 
-Visible launcher:
-
-Double-click:
+If you want to see startup logs, double-click:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Start Local AI Control Center.cmd
+Start Local AI Control Center.cmd
 ```
 
 First-time setup:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Install Local AI Control Center.cmd
+Install Local AI Control Center.cmd
 ```
 
 ## User Manual
 
 Full walkthrough:
 
-```powershell
-C:\Users\scott\Desktop\local-ai-agent\USER_MANUAL.md
+```text
+USER_MANUAL.md
 ```
 
 ## Local Services
@@ -56,7 +54,7 @@ OpenHands is the local coding/agent UI. It can work in a Docker sandbox, read an
 Writable local workspace:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\agent-workspace
+.\agent-workspace
 ```
 
 Inside OpenHands, that folder appears as:
@@ -141,11 +139,11 @@ GitHub Actions is disabled while the account is out of Actions minutes.
 Use the local runner first:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.vbs
+Run Local Test Runner.vbs
 ```
 
 See:
 
 ```text
-C:\Users\scott\Desktop\local-ai-agent\RUNNER.md
+RUNNER.md
 ```
