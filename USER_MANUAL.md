@@ -82,6 +82,8 @@ The wizard can start these setup actions from the app:
 | Pull Images | Downloads the OpenHands and Open WebUI Docker images |
 | Start Both Services | Starts OpenHands and Open WebUI after prerequisites are ready |
 
+Long setup actions stream live output into the First Run panel while they run. If a model or Docker image takes several minutes to download, leave the app open and watch the log panel for progress.
+
 Docker Desktop may ask for administrator approval or a restart. That is normal on Windows.
 
 ## Choosing The Right Tool

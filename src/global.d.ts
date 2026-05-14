@@ -1,5 +1,10 @@
 export type ServiceName = "openhands" | "openwebui";
 export type SetupAction = "install-docker" | "install-ollama" | "pull-models" | "pull-images" | "start-services";
+export type SetupOutput = {
+  action: string;
+  stream: "stdout" | "stderr" | "system";
+  text: string;
+};
 
 export type LocalAIStatus = {
   docker: {
@@ -73,6 +78,7 @@ declare global {
       getStatus: () => Promise<LocalAIStatus>;
       getSetupStatus: () => Promise<SetupStatus>;
       runSetupAction: (action: SetupAction) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
+      onSetupOutput: (callback: (output: SetupOutput) => void) => () => void;
       startService: (service: ServiceName) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       stopService: (service: ServiceName) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       runTestCommand: (command: "runner" | "llm") => Promise<{ ok: boolean; stdout: string; stderr: string }>;

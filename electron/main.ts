@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
@@ -44,6 +44,12 @@ type CommandResult = {
   stderr: string;
 };
 
+type SetupOutput = {
+  action: string;
+  stream: "stdout" | "stderr" | "system";
+  text: string;
+};
+
 async function run(command: string, args: string[], timeout = 120_000): Promise<CommandResult> {
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
   const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
@@ -66,6 +72,66 @@ async function run(command: string, args: string[], timeout = 120_000): Promise<
       stderr: err.stderr?.trim() || err.message
     };
   }
+}
+
+function emitSetupOutput(sender: Electron.WebContents | undefined, output: SetupOutput) {
+  sender?.send("setup:output", output);
+}
+
+function streamRun(
+  sender: Electron.WebContents | undefined,
+  action: string,
+  command: string,
+  args: string[],
+  timeout = 120_000
+): Promise<CommandResult> {
+  const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
+  const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+
+  emitSetupOutput(sender, { action, stream: "system", text: `> ${command} ${args.join(" ")}\n` });
+
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      windowsHide: true,
+      env: {
+        ...process.env,
+        PATH: pathValue
+      }
+    });
+    const timer = setTimeout(() => {
+      stderr.push(`Timed out after ${Math.round(timeout / 1000)} seconds.`);
+      emitSetupOutput(sender, { action, stream: "stderr", text: stderr[stderr.length - 1] + "\n" });
+      child.kill();
+    }, timeout);
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      stdout.push(text);
+      emitSetupOutput(sender, { action, stream: "stdout", text });
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      stderr.push(text);
+      emitSetupOutput(sender, { action, stream: "stderr", text });
+    });
+    child.on("error", (error) => {
+      const text = error.message;
+      stderr.push(text);
+      emitSetupOutput(sender, { action, stream: "stderr", text: `${text}\n` });
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      const ok = code === 0;
+      emitSetupOutput(sender, { action, stream: "system", text: ok ? "Command completed.\n" : `Command exited with code ${code}.\n` });
+      resolve({
+        ok,
+        stdout: stdout.join("").trim(),
+        stderr: stderr.join("").trim()
+      });
+    });
+  });
 }
 
 async function fetchText(url: string): Promise<{ ok: boolean; text: string }> {
@@ -113,8 +179,11 @@ async function portAvailable(port: number, containerName: string): Promise<Comma
   };
 }
 
-async function startPowerShellScript(scriptName: string): Promise<CommandResult> {
+async function startPowerShellScript(scriptName: string, sender?: Electron.WebContents, action = "start-services"): Promise<CommandResult> {
   const scriptPath = path.join(appRoot, scriptName);
+  if (sender) {
+    return streamRun(sender, action, "powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000);
+  }
   return run("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000);
 }
 
@@ -230,7 +299,7 @@ async function getSetupStatus() {
   };
 }
 
-async function installWithWinget(id: string, fallbackUrl: string): Promise<CommandResult> {
+async function installWithWinget(id: string, fallbackUrl: string, sender?: Electron.WebContents, action = "install"): Promise<CommandResult> {
   const winget = await run("winget.exe", ["--version"], 20_000);
   if (!winget.ok) {
     await shell.openExternal(fallbackUrl);
@@ -240,13 +309,13 @@ async function installWithWinget(id: string, fallbackUrl: string): Promise<Comma
       stderr: `winget was not found, so the official download page was opened instead: ${fallbackUrl}`
     };
   }
-  return run("winget.exe", ["install", "--exact", "--id", id, "--accept-package-agreements", "--accept-source-agreements"], 1_800_000);
+  return streamRun(sender, action, "winget.exe", ["install", "--exact", "--id", id, "--accept-package-agreements", "--accept-source-agreements"], 1_800_000);
 }
 
-async function pullRequiredModels(): Promise<CommandResult> {
+async function pullRequiredModels(sender?: Electron.WebContents): Promise<CommandResult> {
   const outputs: string[] = [];
   for (const model of requiredModels) {
-    const result = await run(ollamaExe, ["pull", model], 3_600_000);
+    const result = await streamRun(sender, "pull-models", ollamaExe, ["pull", model], 3_600_000);
     outputs.push(`> ollama pull ${model}\n${result.stdout || result.stderr}`);
     if (!result.ok) {
       return { ok: false, stdout: outputs.join("\n\n"), stderr: result.stderr };
@@ -255,10 +324,10 @@ async function pullRequiredModels(): Promise<CommandResult> {
   return { ok: true, stdout: outputs.join("\n\n"), stderr: "" };
 }
 
-async function pullRequiredDockerImages(): Promise<CommandResult> {
+async function pullRequiredDockerImages(sender?: Electron.WebContents): Promise<CommandResult> {
   const outputs: string[] = [];
   for (const image of requiredDockerImages) {
-    const result = await run(dockerExe, ["pull", image], 3_600_000);
+    const result = await streamRun(sender, "pull-images", dockerExe, ["pull", image], 3_600_000);
     outputs.push(`> docker pull ${image}\n${result.stdout || result.stderr}`);
     if (!result.ok) {
       return { ok: false, stdout: outputs.join("\n\n"), stderr: result.stderr };
@@ -373,23 +442,28 @@ ipcMain.handle("system:getSetupStatus", async () => {
   return getSetupStatus();
 });
 
-ipcMain.handle("system:runSetupAction", async (_event, action: string) => {
+ipcMain.handle("system:runSetupAction", async (event, action: string) => {
+  const sender = event.sender;
+  emitSetupOutput(sender, { action, stream: "system", text: `Starting ${action}...\n` });
   switch (action) {
     case "install-docker":
-      return installWithWinget("Docker.DockerDesktop", "https://www.docker.com/products/docker-desktop/");
+      return installWithWinget("Docker.DockerDesktop", "https://www.docker.com/products/docker-desktop/", sender, action);
     case "install-ollama":
-      return installWithWinget("Ollama.Ollama", "https://ollama.com/download");
+      return installWithWinget("Ollama.Ollama", "https://ollama.com/download", sender, action);
     case "pull-models":
-      return pullRequiredModels();
+      return pullRequiredModels(sender);
     case "pull-images":
-      return pullRequiredDockerImages();
+      return pullRequiredDockerImages(sender);
     case "start-services": {
       const [openHandsPort, openWebUiPort] = await Promise.all([portAvailable(3000, "openhands-app"), portAvailable(8080, "open-webui")]);
       const blocked = [openHandsPort, openWebUiPort].filter((result) => !result.ok);
       if (blocked.length) {
         return { ok: false, stdout: "", stderr: blocked.map((result) => result.stderr).join("\n") };
       }
-      const [openHands, openWebUi] = await Promise.all([startPowerShellScript("start-openhands.ps1"), startPowerShellScript("start-openwebui.ps1")]);
+      const [openHands, openWebUi] = await Promise.all([
+        startPowerShellScript("start-openhands.ps1", sender, action),
+        startPowerShellScript("start-openwebui.ps1", sender, action)
+      ]);
       return {
         ok: openHands.ok && openWebUi.ok,
         stdout: [openHands.stdout, openWebUi.stdout].filter(Boolean).join("\n\n"),

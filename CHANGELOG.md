@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 - 2026-05-14
+
+- Added live streaming setup output from the Electron main process to the First Run panel.
+- Streamed `winget`, `ollama pull`, `docker pull`, and service-start script output through a safe preload subscription.
+- Updated first-run setup copy so users know long installs and downloads are actively doing work.
+- Moved streaming progress logs from the landing-page next-pass list to working-now.
+
 ## 0.2.3 - 2026-05-14
 
 - Refreshed the dashboard screenshot used by the README and landing page so it no longer contains stale internal UI copy.

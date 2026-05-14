@@ -10,6 +10,7 @@ It gives you one GUI for:
 - Reading the machine's CPU, RAM, disk, GPU, and VRAM.
 - Installing Docker Desktop and Ollama from the app when possible.
 - Pulling required Ollama models and Docker images.
+- Streaming setup logs while long installs and downloads run.
 - Starting and stopping OpenHands.
 - Starting and stopping Open WebUI.
 - Checking Docker, Ollama, and service health.

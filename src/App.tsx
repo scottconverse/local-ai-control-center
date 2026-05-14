@@ -21,7 +21,7 @@ import {
   TerminalSquare,
   XCircle
 } from "lucide-react";
-import type { LocalAIStatus, ServiceName, SetupAction, SetupStatus } from "./global";
+import type { LocalAIStatus, ServiceName, SetupAction, SetupOutput, SetupStatus } from "./global";
 import "./styles.css";
 
 type View = "setup" | "dashboard" | "openhands" | "openwebui";
@@ -175,9 +175,16 @@ function App() {
     };
     setLastMessage(`${labels[action]}...`);
     setOperationDetail("This setup step can take several minutes. Keep this window open and approve any Windows installer prompts.");
+    setTestOutput("");
     const result = await window.localAI.runSetupAction(action);
     const output = [result.stdout, result.stderr].filter(Boolean).join("\n\n");
-    setTestOutput(output || `${labels[action]} finished with no output.`);
+    setTestOutput((current) => {
+      const summary = result.ok ? `${labels[action]} complete.` : `${labels[action]} needs attention.`;
+      if (current.trim()) {
+        return `${current.trim()}\n\n${summary}`;
+      }
+      return output ? `${summary}\n${output}` : summary;
+    });
     setLastMessage(result.ok ? `${labels[action]} complete.` : `${labels[action]} needs attention.`);
     setOperationDetail(result.ok ? "" : output || "Check the setup step output below.");
     await refresh();
@@ -225,6 +232,14 @@ function App() {
     refresh();
     const timer = window.setInterval(refresh, 30_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    function appendSetupOutput(output: SetupOutput) {
+      setTestOutput((current) => `${current}${output.text}`.slice(-40_000));
+    }
+
+    return window.localAI.onSetupOutput(appendSetupOutput);
   }, []);
 
   const openHandsReady = status.services.openHands.reachable;
@@ -441,7 +456,7 @@ function App() {
                   Run Local Runner
                 </button>
               </div>
-              {setupActionRunning && <p className="setup-footnote">Installer and download steps can take a while. Output appears below when the step finishes.</p>}
+              {setupActionRunning && <p className="setup-footnote">Installer and download steps can take a while. Live output streams below while the step runs.</p>}
               <pre className="test-output">{testOutput}</pre>
             </article>
           </section>

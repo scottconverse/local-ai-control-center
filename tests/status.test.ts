@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.2.3");
+    expect(packageJson.version).toBe("0.3.0");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -151,5 +151,30 @@ describe("service launcher scripts", () => {
     const contributing = read("CONTRIBUTING.md");
 
     expect(contributing).toContain("Refresh screenshots in `landing/assets/` when UI copy or visible dashboard state changes.");
+  });
+
+  it("streams setup output from main through preload into the first-run panel", () => {
+    const mainProcess = read("electron/main.ts");
+    const preload = read("electron/preload.ts");
+    const app = read("src/App.tsx");
+    const globalTypes = read("src/global.d.ts");
+
+    expect(mainProcess).toContain("setup:output");
+    expect(mainProcess).toContain("streamRun");
+    expect(preload).toContain("onSetupOutput");
+    expect(app).toContain("appendSetupOutput");
+    expect(app).toContain("Live output streams below while the step runs.");
+    expect(globalTypes).toContain("SetupOutput");
+  });
+
+  it("moves streaming setup logs from future work to working-now docs", () => {
+    const readme = read("README.md");
+    const manual = read("USER_MANUAL.md");
+    const landing = read("landing/index.html");
+
+    expect(readme).toContain("Streaming setup logs while long installs and downloads run.");
+    expect(manual).toContain("Long setup actions stream live output");
+    expect(landing).toContain("Live streaming setup logs for installs, model pulls, image pulls, and service starts");
+    expect(landing).not.toContain("Streaming progress logs for long model and Docker pulls");
   });
 });
