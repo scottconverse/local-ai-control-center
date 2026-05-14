@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4 - 2026-05-14
+
+- Removed the unused raw Ollama CLI output field from the renderer status type and IPC payload.
+- Documented the shared `electron/stream-logic.ts` browser-safe boundary for contributors.
+- Added Windows CRLF whitespace coverage for streamed setup log formatting.
+- Renamed the version-pin test to use version-neutral wording and documented the `ollama list` header-row fallback assumption.
+
 ## 0.3.3 - 2026-05-14
 
 - Confirmed the verbose local test count at 36 tests and extended fallback Ollama parser coverage for empty and header-only CLI output.

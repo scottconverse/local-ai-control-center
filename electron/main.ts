@@ -397,7 +397,6 @@ ipcMain.handle("system:getStatus", async () => {
     },
     ollama: {
       ok: ollamaTagsResult.ok && (modelsResult.ok || apiModels.length > 0),
-      models: modelsResult.stdout,
       modelNames,
       executable: ollamaExe,
       version: ollamaVersion.stdout || ollamaVersion.stderr,

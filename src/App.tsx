@@ -29,7 +29,7 @@ type View = "setup" | "dashboard" | "openhands" | "openwebui";
 
 const fallbackStatus: LocalAIStatus = {
   docker: { ok: false, version: "Checking...", executable: "docker.exe", message: "Checking Docker..." },
-  ollama: { ok: false, models: "", modelNames: [], executable: "ollama.exe", version: "Checking...", message: "Checking Ollama..." },
+  ollama: { ok: false, modelNames: [], executable: "ollama.exe", version: "Checking...", message: "Checking Ollama..." },
   services: {
     openHands: { container: "unknown", url: "http://localhost:3000", reachable: false },
     openWebUi: { container: "unknown", url: "http://localhost:8080", reachable: false }

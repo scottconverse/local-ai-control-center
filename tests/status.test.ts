@@ -37,9 +37,9 @@ describe("service launcher scripts", () => {
     }
   });
 
-  it("tracks the patch release version for the safety fix", () => {
+  it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.3.3");
+    expect(packageJson.version).toBe("0.3.4");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -190,8 +190,16 @@ describe("service launcher scripts", () => {
 
     expect(mainProcess).toContain("modelNames");
     expect(globalTypes).toContain("modelNames: string[]");
+    expect(globalTypes).not.toContain("models: string;");
     expect(app).toContain("status.ollama.modelNames");
     expect(app).not.toContain(".split(\"\\n\")");
+  });
+
+  it("documents the shared stream helper module boundary", () => {
+    const developer = read("DEVELOPER.md");
+
+    expect(developer).toContain("`electron/stream-logic.ts` contains pure shared streaming helpers");
+    expect(developer).toContain("Do not add Electron, Node-only, or filesystem dependencies to this module");
   });
 
   it("documents Ollama overrides and background pull behavior", () => {

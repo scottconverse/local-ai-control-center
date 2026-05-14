@@ -96,6 +96,7 @@ export function parseOllamaTags(body: string): string[] {
 }
 
 export function parseOllamaListNames(output: string): string[] {
+  // `ollama list` emits a header row first; this is only a CLI fallback after the tags API.
   return output
     .split("\n")
     .slice(1)
