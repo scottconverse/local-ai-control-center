@@ -36,6 +36,8 @@ Docker is resolved from `DOCKER_EXE`, `DOCKER_PATH`, the system `PATH`, or the s
 4. Use the setup buttons to install missing tools, pull models, pull images, and start services.
 5. When setup is ready, use the Dashboard for normal daily work.
 
+After setup has completed once, the app remembers that this machine was verified and opens to the Dashboard on later launches. You can still return to **First Run** any time to re-check the machine or pull missing assets.
+
 If you are running from the source folder, double-click:
 
 ```text
@@ -88,6 +90,8 @@ If you close the app during a model or image pull, the background download may c
 
 Docker Desktop may ask for administrator approval or a restart. That is normal on Windows.
 
+When First Run shows **Setup complete**, click **Go to Dashboard**. The completion state is saved locally so future launches start in the daily-use view.
+
 ## Choosing The Right Tool
 
 Use **OpenHands** when the task involves files, projects, commands, or code.
@@ -117,6 +121,15 @@ Good Open WebUI requests:
 | Fast chat | `gemma4-26b-8k` |
 
 The Dashboard shows the configured OpenHands model and Open WebUI image. Open WebUI can also use other local Ollama models, such as `gpt-oss:20b`, if they are installed.
+
+You can change the configured OpenHands and Open WebUI chat models from **Dashboard > Model Settings And Reset Controls**. Save the model settings, then restart the affected service so the container launches with the new value. The First Run model pull step uses the saved model choices.
+
+The Dashboard also includes reset controls for OpenHands and Open WebUI. Use these only when you want a clean slate:
+
+| Reset control | What it clears |
+|---|---|
+| Reset OpenHands Data | Stops/removes the OpenHands container and clears the local `.openhands` state folder |
+| Reset Open WebUI Data | Stops/removes the Open WebUI container and removes the `open-webui` Docker volume |
 
 ## Workspace
 

@@ -26,6 +26,7 @@ if ($resolvedWorkspace -notmatch "^[A-Za-z]:\\") {
 $drive = $resolvedWorkspace.Substring(0, 1).ToLowerInvariant()
 $pathWithoutDrive = $resolvedWorkspace.Substring(2).Replace("\", "/")
 $dockerWorkspacePath = "/run/desktop/mnt/host/$drive$pathWithoutDrive"
+$openHandsModel = if ($env:OPENHANDS_MODEL) { $env:OPENHANDS_MODEL } else { "openai/qwen2.5-coder:14b" }
 
 $existingContainer = & $dockerCommand ps -aq --filter "name=^openhands-app$"
 if ($existingContainer) {
@@ -35,7 +36,7 @@ if ($existingContainer) {
 & $dockerCommand run -d --pull=always `
   -e AGENT_SERVER_IMAGE_REPOSITORY=ghcr.io/openhands/agent-server `
   -e AGENT_SERVER_IMAGE_TAG=1.19.1-python `
-  -e LLM_MODEL=openai/qwen2.5-coder:14b `
+  -e LLM_MODEL=$openHandsModel `
   -e LLM_BASE_URL=http://host.docker.internal:11434/v1 `
   -e LLM_API_KEY=local-key `
   -e SANDBOX_VOLUMES="${dockerWorkspacePath}:/workspace:rw" `

@@ -21,11 +21,12 @@ import {
   TerminalSquare,
   XCircle
 } from "lucide-react";
-import type { LocalAIStatus, ServiceName, SetupAction, SetupOutput, SetupStatus } from "./global";
-import { appendCappedOutput, formatSetupOutput } from "../electron/stream-logic";
+import type { LocalAIConfig, LocalAIStatus, ResetTarget, ServiceName, SetupAction, SetupOutput, SetupStatus } from "./global";
+import { appendCappedOutput, formatSetupOutput } from "./stream-logic";
 import "./styles.css";
 
 type View = "setup" | "dashboard" | "openhands" | "openwebui";
+type RefreshSource = "user" | "timer" | "initial" | "operation";
 
 const fallbackStatus: LocalAIStatus = {
   docker: { ok: false, version: "Checking...", executable: "docker.exe", message: "Checking Docker..." },
@@ -66,12 +67,17 @@ const fallbackSetup: SetupStatus = {
   nextSteps: ["Checking this machine."]
 };
 
-function StatusPill({ ok, label }: { ok: boolean; label: string }) {
+const modelDescriptions: Record<string, string> = {
+  "openai/qwen2.5-coder:14b": "Code and project work",
+  "gemma4-26b-8k": "General chat"
+};
+
+function StatusPill({ ok, label, message, onClick }: { ok: boolean; label: string; message: string; onClick: () => void }) {
   return (
-    <span className={`status-pill ${ok ? "ok" : "warn"}`}>
+    <button className={`status-pill ${ok ? "ok" : "warn"}`} title={ok ? `${label} is ready.` : message} onClick={onClick}>
       {ok ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
       {label}
-    </span>
+    </button>
   );
 }
 
@@ -106,6 +112,17 @@ function SetupCheckCard({
   detail: string;
   severity: "ok" | "warn" | "fail";
 }) {
+  const recovery =
+    severity === "fail"
+      ? label === "GPU / VRAM"
+        ? "Next: close games, video tools, or other GPU-heavy apps, then click Refresh."
+        : label === "System RAM"
+          ? "Next: close heavy apps, then click Refresh. This stack works best with at least 32 GB RAM."
+          : label === "Disk"
+            ? "Next: free disk space on this drive, then click Refresh."
+            : "Next: review this check, then click Refresh."
+      : "";
+
   return (
     <article className={`setup-check ${severity}`}>
       <div className="setup-check-icon">{icon}</div>
@@ -113,6 +130,7 @@ function SetupCheckCard({
         <h4>{label}</h4>
         <strong>{value}</strong>
         <p>{detail}</p>
+        {recovery && <p className="recovery">{recovery}</p>}
       </div>
     </article>
   );
@@ -128,7 +146,7 @@ function AssetRow({ name, installed }: { name: string; installed: boolean }) {
   );
 }
 
-function App() {
+export function App() {
   const [view, setView] = useState<View>("setup");
   const [status, setStatus] = useState<LocalAIStatus>(fallbackStatus);
   const [setup, setSetup] = useState<SetupStatus>(fallbackSetup);
@@ -137,27 +155,59 @@ function App() {
   const [operationDetail, setOperationDetail] = useState("");
   const [setupOutput, setSetupOutput] = useState("No setup action has been started from this window yet.");
   const [runnerOutput, setRunnerOutput] = useState("No local runner has been started from this window yet.");
+  const [setupCompleteMessage, setSetupCompleteMessage] = useState("");
+  const [openHandsGuideDismissed, setOpenHandsGuideDismissed] = useState(() => window.localStorage.getItem("openhands-guide-dismissed") === "true");
+  const [configDraft, setConfigDraft] = useState<LocalAIConfig>(fallbackStatus.config);
   const refreshingRef = useRef(false);
+  const userSelectedViewRef = useRef(false);
 
   const models = status.ollama.modelNames;
 
-  async function refresh() {
+  async function refresh(source: RefreshSource = "user") {
     if (refreshingRef.current) {
       return;
     }
     refreshingRef.current = true;
-    setBusy("refresh");
+    if (source === "user") {
+      setBusy("refresh");
+    }
     try {
       const [nextStatus, nextSetup] = await Promise.all([window.localAI.getStatus(), window.localAI.getSetupStatus()]);
+      const servicesReady = nextStatus.services.openHands.reachable && nextStatus.services.openWebUi.reachable;
+      if (nextSetup.ready && servicesReady) {
+        const memory = nextSetup.completedAt ? { completedAt: nextSetup.completedAt } : await window.localAI.markSetupComplete();
+        nextSetup.completedAt = memory.completedAt;
+        setSetupCompleteMessage(`Setup complete. Last verified ${new Date(memory.completedAt).toLocaleString()}.`);
+        if (!userSelectedViewRef.current && source === "initial") {
+          setView("dashboard");
+        }
+      } else if (nextSetup.completedAt && !userSelectedViewRef.current && source === "initial") {
+        setView("dashboard");
+      }
       setStatus(nextStatus);
       setSetup(nextSetup);
-      setLastMessage("Status refreshed.");
+      if (source === "user") {
+        setLastMessage("Status refreshed.");
+      }
     } catch (error) {
       setLastMessage(error instanceof Error ? error.message : "Could not refresh status.");
     } finally {
       refreshingRef.current = false;
-      setBusy(null);
+      if (source === "user") {
+        setBusy(null);
+      }
     }
+  }
+
+  function setupFailureGuidance(action: SetupAction) {
+    const guidance: Record<SetupAction, string> = {
+      "install-docker": "If Windows blocked the installer, approve the prompt or open the official Docker Desktop download page, then click Install Docker again.",
+      "install-ollama": "If the installer did not finish, approve the Windows prompt or open the Ollama download page, then click Install Ollama again.",
+      "pull-models": "Keep Ollama running, check the log for the failed model name, then click Pull Models again. Completed downloads are reused.",
+      "pull-images": "Keep Docker Desktop running, check the log for the failed image name, then click Pull Images again. Completed downloads are reused.",
+      "start-services": "Check the port message above, close the conflicting app if one is named, then click Start Both Services again."
+    };
+    return guidance[action];
   }
 
   async function runSetup(action: SetupAction) {
@@ -182,8 +232,9 @@ function App() {
       return output ? `${summary}\n${output}` : summary;
     });
     setLastMessage(result.ok ? `${labels[action]} complete.` : `${labels[action]} needs attention.`);
-    setOperationDetail(result.ok ? "" : output || "Check the setup step output below.");
-    await refresh();
+    setOperationDetail(result.ok ? "" : setupFailureGuidance(action));
+    await refresh("operation");
+    setBusy(null);
   }
 
   async function start(service: ServiceName) {
@@ -194,7 +245,8 @@ function App() {
     const result = await window.localAI.startService(service);
     setLastMessage(result.ok ? `${label} started.` : result.stderr || `Could not start ${label}.`);
     setOperationDetail(result.ok ? "" : "Check Docker Desktop, port availability, and the service logs if this repeats.");
-    await refresh();
+    await refresh("operation");
+    setBusy(null);
   }
 
   async function stop(service: ServiceName) {
@@ -204,7 +256,8 @@ function App() {
     setOperationDetail("");
     const result = await window.localAI.stopService(service);
     setLastMessage(result.ok ? `${label} stopped.` : result.stderr || `Could not stop ${label}.`);
-    await refresh();
+    await refresh("operation");
+    setBusy(null);
   }
 
   async function runTests(command: "runner" | "llm") {
@@ -219,16 +272,45 @@ function App() {
     setBusy(null);
   }
 
+  async function saveConfig() {
+    setBusy("config-save");
+    setLastMessage("Saving model settings...");
+    const nextConfig = await window.localAI.updateConfig(configDraft);
+    setStatus((current) => ({ ...current, config: nextConfig }));
+    setLastMessage("Model settings saved. Restart affected services for changes to take effect.");
+    await refresh("operation");
+    setBusy(null);
+  }
+
+  async function resetServiceData(target: ResetTarget) {
+    const label = target === "openhands" ? "OpenHands" : "Open WebUI";
+    if (!window.confirm(`Reset ${label} data? This stops the service and removes its local saved state.`)) {
+      return;
+    }
+    setBusy(`reset-${target}`);
+    setLastMessage(`Resetting ${label} data...`);
+    const result = await window.localAI.resetServiceData(target);
+    setLastMessage(result.ok ? `${label} data reset.` : result.stderr || `${label} reset needs attention.`);
+    setOperationDetail(result.ok ? "" : "Close the service, make sure Docker Desktop is running, then try the reset again.");
+    await refresh("operation");
+    setBusy(null);
+  }
+
   function changeView(nextView: View) {
+    userSelectedViewRef.current = true;
     setView(nextView);
     setOperationDetail("");
   }
 
   useEffect(() => {
-    refresh();
-    const timer = window.setInterval(refresh, 30_000);
+    void refresh("initial");
+    const timer = window.setInterval(() => void refresh("timer"), 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setConfigDraft(status.config);
+  }, [status.config]);
 
   useEffect(() => {
     function appendSetupOutput(output: SetupOutput) {
@@ -249,6 +331,8 @@ function App() {
   const missingImages = setup.assets.dockerImages.some((image) => !image.installed);
   const hardwareReady = setup.hardware.memory.ok && setup.hardware.disk.ok && setup.hardware.gpu.ok;
   const setupActionRunning = busy?.startsWith("setup-");
+  const servicesReady = openHandsReady && openWebUiReady;
+  const setupComplete = setup.ready && servicesReady;
 
   return (
     <div className="app-shell">
@@ -265,7 +349,7 @@ function App() {
 
         <nav>
           <button className={view === "setup" ? "active" : ""} onClick={() => changeView("setup")}>
-            <Download size={19} />
+            {setupActionRunning ? <Loader2 className="spin nav-spinner" size={19} /> : <Download size={19} />}
             First Run
           </button>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => changeView("dashboard")}>
@@ -289,7 +373,7 @@ function App() {
           </button>
           <button aria-label="Open user manual file" onClick={() => window.localAI.openExternal("manual")}>
             <ExternalLink size={18} />
-            Manual File
+            User Manual
           </button>
         </div>
       </aside>
@@ -305,7 +389,7 @@ function App() {
             </h2>
             <p>{lastMessage}</p>
           </div>
-          <button className="refresh" aria-label="Refresh status" onClick={refresh} disabled={!!busy}>
+          <button className="refresh" aria-label="Refresh status" onClick={() => refresh("user")} disabled={!!busy}>
             {busy === "refresh" ? <Loader2 className="spin" size={18} /> : <RefreshCw size={18} />}
             Refresh
           </button>
@@ -324,14 +408,39 @@ function App() {
                 <p className="eyebrow">No-terminal onboarding</p>
                 <h3>Make this machine ready for local agent work.</h3>
                 <p>
-                  The setup wizard reads the machine first, then installs or prepares the pieces Local AI Control Center needs:
-                  Docker Desktop, Ollama, local models, and Docker images.
+                  This wizard checks your machine and sets it up for local AI work. It installs Docker Desktop and Ollama,
+                  downloads the required models and container images, and starts both services. Follow the steps in order;
+                  each one enables the next.
                 </p>
               </div>
               <div className={`setup-verdict ${setup.ready ? "ready" : hardwareReady ? "partial" : "blocked"}`}>
                 <strong>{setup.ready ? "Ready" : hardwareReady ? "Setup needed" : "Hardware check"}</strong>
                 <span>{setup.summary}</span>
               </div>
+            </div>
+
+            {setupComplete && (
+              <div className="completion-banner">
+                <div>
+                  <strong>Setup complete. You're ready to use Local AI Control Center.</strong>
+                  <span>{setupCompleteMessage || setup.summary}</span>
+                </div>
+                <button className="primary" onClick={() => changeView("dashboard")}>
+                  Go to Dashboard
+                </button>
+              </div>
+            )}
+
+            <div className="setup-progress">
+              <span className={hardwareReady ? "done" : "active"}>1. Check machine</span>
+              <span className={setup.tools.docker.running && setup.tools.ollama.running ? "done" : hardwareReady ? "active" : ""}>2. Install tools</span>
+              <span className={!missingModels && !missingImages ? "done" : setup.tools.docker.running && setup.tools.ollama.running ? "active" : ""}>3. Pull assets</span>
+              <span className={setupComplete ? "done" : !missingModels && !missingImages ? "active" : ""}>4. Start services</span>
+            </div>
+
+            <div className="section-heading">
+              <span className="step-label">Step 1</span>
+              <strong>Check Your Machine</strong>
             </div>
 
             <div className="setup-grid">
@@ -370,7 +479,7 @@ function App() {
                 <div className="panel-title">
                   <Server size={22} />
                   <div>
-                    <h3>Install Runtime Tools</h3>
+                    <h3><span className="step-label">Step 2</span> Install Runtime Tools</h3>
                     <p>Use Windows installers from inside the app. Docker Desktop may ask for administrator approval.</p>
                   </div>
                 </div>
@@ -390,12 +499,12 @@ function App() {
                 </ul>
                 <div className="button-row">
                   <button onClick={() => runSetup("install-docker")} disabled={!!busy || setup.tools.docker.running}>
-                    {busy === "setup-install-docker" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
-                    Install Docker
+                    {busy === "setup-install-docker" ? <Loader2 className="spin" size={17} /> : setup.tools.docker.running ? <CheckCircle2 size={17} /> : <Download size={17} />}
+                    {setup.tools.docker.running ? "Docker Installed" : "Install Docker"}
                   </button>
                   <button onClick={() => runSetup("install-ollama")} disabled={!!busy || setup.tools.ollama.running}>
-                    {busy === "setup-install-ollama" ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
-                    Install Ollama
+                    {busy === "setup-install-ollama" ? <Loader2 className="spin" size={17} /> : setup.tools.ollama.running ? <CheckCircle2 size={17} /> : <Download size={17} />}
+                    {setup.tools.ollama.running ? "Ollama Installed" : "Install Ollama"}
                   </button>
                 </div>
               </article>
@@ -404,7 +513,7 @@ function App() {
                 <div className="panel-title">
                   <Boxes size={22} />
                   <div>
-                    <h3>Prepare Models And Images</h3>
+                    <h3><span className="step-label">Step 3</span> Prepare Models And Images</h3>
                     <p>Download the local model files and container images before starting services.</p>
                   </div>
                 </div>
@@ -432,8 +541,8 @@ function App() {
             <article className="panel runner-panel">
               <div className="panel-title">
                 <CheckCircle2 size={22} />
-                <div>
-                  <h3>Finish Setup</h3>
+                  <div>
+                  <h3><span className="step-label">Step 4</span> Finish Setup</h3>
                   <p>When the checks are ready, start both services and run the local smoke check.</p>
                 </div>
               </div>
@@ -461,11 +570,56 @@ function App() {
         {view === "dashboard" && (
           <section className="dashboard">
             <div className="health-row">
-              <StatusPill ok={status.docker.ok} label="Docker" />
-              <StatusPill ok={status.ollama.ok} label="Ollama" />
-              <StatusPill ok={openHandsReady} label="OpenHands" />
-              <StatusPill ok={openWebUiReady} label="Open WebUI" />
+              <StatusPill ok={status.docker.ok} label="Docker" message={status.docker.message} onClick={() => changeView("setup")} />
+              <StatusPill ok={status.ollama.ok} label="Ollama" message={status.ollama.message} onClick={() => changeView("setup")} />
+              <StatusPill ok={openHandsReady} label="OpenHands" message={`Container: ${status.services.openHands.container}`} onClick={() => changeView("openhands")} />
+              <StatusPill ok={openWebUiReady} label="Open WebUI" message={`Container: ${status.services.openWebUi.container}`} onClick={() => changeView("openwebui")} />
             </div>
+
+            <article className="panel">
+              <div className="panel-title">
+                <Boxes size={22} />
+                <div>
+                  <h3>Model Settings And Reset Controls</h3>
+                  <p>Choose the models this control center launches, then restart the affected services. Reset controls clear local saved service data.</p>
+                </div>
+              </div>
+              <div className="settings-grid">
+                <label>
+                  <span>OpenHands model</span>
+                  <input
+                    list="local-models"
+                    value={configDraft.openHandsModel}
+                    onChange={(event) => setConfigDraft((current) => ({ ...current, openHandsModel: event.target.value }))}
+                  />
+                </label>
+                <label>
+                  <span>Open WebUI chat model</span>
+                  <input
+                    list="local-models"
+                    value={configDraft.openWebUiChatModel}
+                    onChange={(event) => setConfigDraft((current) => ({ ...current, openWebUiChatModel: event.target.value }))}
+                  />
+                </label>
+                <datalist id="local-models">
+                  {models.map((model) => (
+                    <option key={model} value={model} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="button-row">
+                <button className="primary" onClick={saveConfig} disabled={!!busy}>
+                  {busy === "config-save" ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
+                  Save Model Settings
+                </button>
+                <button onClick={() => resetServiceData("openhands")} disabled={!!busy}>
+                  Reset OpenHands Data
+                </button>
+                <button onClick={() => resetServiceData("openwebui")} disabled={!!busy}>
+                  Reset Open WebUI Data
+                </button>
+              </div>
+            </article>
 
             <div className="grid two">
               <article className="panel service-panel">
@@ -543,9 +697,16 @@ function App() {
                   </div>
                 </div>
                 <div className="model-list">
-                  {models.map((model) => (
-                    <span key={model}>{model}</span>
-                  ))}
+                  {models.length ? (
+                    models.map((model) => (
+                      <span key={model}>
+                        <strong>{model}</strong>
+                        {modelDescriptions[model] && <small>{modelDescriptions[model]}</small>}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="empty-state">No models detected. Make sure Ollama is running, or go to First Run to pull the required models.</p>
+                  )}
                 </div>
               </article>
 
@@ -611,7 +772,22 @@ function App() {
         {view === "openhands" && (
           <section className="embedded">
             {openHandsReady ? (
-              <webview className="webview" title="OpenHands Agent" partition="persist:openhands" src={status.services.openHands.url} />
+              <>
+                {!openHandsGuideDismissed && (
+                  <div className="webview-guide">
+                    <span>Your files go in the workspace folder on this machine. Inside OpenHands they appear at /workspace. Ask OpenHands to inspect /workspace before making changes.</span>
+                    <button
+                      onClick={() => {
+                        window.localStorage.setItem("openhands-guide-dismissed", "true");
+                        setOpenHandsGuideDismissed(true);
+                      }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                <webview className="webview" title="OpenHands Agent" partition="persist:openhands" src={status.services.openHands.url} />
+              </>
             ) : (
               <EmptyWebFrame
                 title="OpenHands"
@@ -640,8 +816,11 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}

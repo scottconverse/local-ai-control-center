@@ -76,5 +76,6 @@ describe("setup hardware logic", () => {
     ]);
     expect(parseOllamaListNames("")).toEqual([]);
     expect(parseOllamaListNames("NAME ID SIZE MODIFIED")).toEqual([]);
+    expect(parseOllamaListNames("gemma4-26b-8k abc 15 GB today")).toEqual(["gemma4-26b-8k"]);
   });
 });

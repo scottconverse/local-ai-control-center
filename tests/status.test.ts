@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.3.4");
+    expect(packageJson.version).toBe("0.4.0");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -76,8 +76,9 @@ describe("service launcher scripts", () => {
 
   it("constrains new windows opened from embedded content", () => {
     const mainProcess = read("electron/main.ts");
+    const ipcLogic = read("electron/ipc-logic.ts");
     expect(mainProcess).toContain("setWindowOpenHandler");
-    expect(mainProcess).toContain("Unsupported external target");
+    expect(ipcLogic).toContain("Unsupported external target");
   });
 
   it("surfaces configured model and image values through status", () => {
@@ -127,7 +128,8 @@ describe("service launcher scripts", () => {
     expect(manual).toContain("| GPU / VRAM |");
     expect(landing).toContain("First-run setup wizard with hardware and VRAM checks");
     expect(landing).toContain("Port-conflict preflight before service starts");
-    expect(landing).toContain("First Run screenshot and install-flow diagrams");
+    expect(landing).toContain("First Run visual preview and install-flow diagram");
+    expect(landing).not.toContain("First Run screenshot and install-flow diagrams");
     expect(landing).not.toContain("Prerequisite setup flow for non-developer users");
     expect(landing).not.toContain("Port-conflict detection before service start");
   });
@@ -195,10 +197,16 @@ describe("service launcher scripts", () => {
     expect(app).not.toContain(".split(\"\\n\")");
   });
 
-  it("documents the shared stream helper module boundary", () => {
+  it("keeps shared stream helpers in the renderer-safe source tree", () => {
+    const mainProcess = read("electron/main.ts");
+    const app = read("src/App.tsx");
+    const streamLogic = read("src/stream-logic.ts");
     const developer = read("DEVELOPER.md");
 
-    expect(developer).toContain("`electron/stream-logic.ts` contains pure shared streaming helpers");
+    expect(mainProcess).toContain("../src/stream-logic");
+    expect(app).toContain("./stream-logic");
+    expect(streamLogic).toContain("formatSetupOutput");
+    expect(developer).toContain("`src/stream-logic.ts` contains pure shared streaming helpers");
     expect(developer).toContain("Do not add Electron, Node-only, or filesystem dependencies to this module");
   });
 
@@ -210,5 +218,42 @@ describe("service launcher scripts", () => {
     expect(manual).toContain("App closed during a model or image pull");
     expect(developer).toContain("OLLAMA_EXE");
     expect(developer).toContain("OLLAMA_PATH");
+  });
+
+  it("ships first-run orientation, setup memory, and actionable setup UI", () => {
+    const app = read("src/App.tsx");
+    const mainProcess = read("electron/main.ts");
+
+    expect(app).toContain("This wizard checks your machine and sets it up for local AI work");
+    expect(app).toContain("setup-progress");
+    expect(app).toContain("Setup complete. You're ready to use Local AI Control Center.");
+    expect(app).toContain("Docker Installed");
+    expect(app).toContain("setupFailureGuidance");
+    expect(mainProcess).toContain("setup-state.json");
+    expect(mainProcess).toContain("system:markSetupComplete");
+  });
+
+  it("keeps timer refreshes from locking the manual refresh button", () => {
+    const app = read("src/App.tsx");
+
+    expect(app).toContain('type RefreshSource = "user" | "timer" | "initial" | "operation"');
+    expect(app).toContain('if (source === "user")');
+    expect(app).toContain('window.setInterval(() => void refresh("timer")');
+  });
+
+  it("opens a rendered manual and adds user-facing model and reset controls", () => {
+    const mainProcess = read("electron/main.ts");
+    const app = read("src/App.tsx");
+    const preload = read("electron/preload.ts");
+    const openHandsScript = read("start-openhands.ps1");
+    const openWebUiScript = read("start-openwebui.ps1");
+
+    expect(mainProcess).toContain("https://github.com/scottconverse/local-ai-control-center/blob/main/USER_MANUAL.md");
+    expect(app).toContain("User Manual");
+    expect(app).toContain("Model Settings And Reset Controls");
+    expect(preload).toContain("updateConfig");
+    expect(preload).toContain("resetServiceData");
+    expect(openHandsScript).toContain("$openHandsModel");
+    expect(openWebUiScript).toContain("DEFAULT_MODELS");
   });
 });

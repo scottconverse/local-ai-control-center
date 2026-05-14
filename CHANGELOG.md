@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 - 2026-05-14
+
+- Reworked First Run into a guided setup flow with orientation copy, step progress, completion messaging, setup-complete memory, and clearer recovery guidance.
+- Added rendered manual access through the browser instead of opening raw Markdown in the default file handler.
+- Added Dashboard model settings and service data reset controls backed by persisted app configuration.
+- Moved shared stream helpers into `src/stream-logic.ts` and made the Ollama CLI fallback parser robust to headerless output.
+- Fixed background timer refreshes so they do not lock the manual Refresh button.
+- Added IPC helper tests and React first-run component tests, raising local coverage to 48 tests.
+- Updated the landing page with a First Run visual preview and install-flow diagram.
+
 ## 0.3.4 - 2026-05-14
 
 - Removed the unused raw Ollama CLI output field from the renderer status type and IPC payload.

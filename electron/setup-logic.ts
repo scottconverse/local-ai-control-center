@@ -96,10 +96,12 @@ export function parseOllamaTags(body: string): string[] {
 }
 
 export function parseOllamaListNames(output: string): string[] {
-  // `ollama list` emits a header row first; this is only a CLI fallback after the tags API.
-  return output
+  const lines = output
     .split("\n")
-    .slice(1)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const dataLines = lines[0]?.split(/\s+/)[0]?.toLowerCase() === "name" ? lines.slice(1) : lines;
+  return dataLines
     .map((line) => line.trim().split(/\s+/)[0])
     .filter(Boolean);
 }

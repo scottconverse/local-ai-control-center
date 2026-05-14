@@ -31,7 +31,7 @@ Ollama is resolved in this order:
 
 ## Shared Logic Boundary
 
-`electron/stream-logic.ts` contains pure shared streaming helpers used by both the Electron main process and the React renderer. It lives beside the main-process streaming code so the emitted Electron build keeps a simple module layout, but it must stay browser-safe.
+`src/stream-logic.ts` contains pure shared streaming helpers used by both the Electron main process and the React renderer. It lives in `src/` because the renderer imports it directly, but it must stay safe for both browser and Electron main-process use.
 
 Do not add Electron, Node-only, or filesystem dependencies to this module. If a helper needs those dependencies, keep it in `electron/main.ts` or move the browser-safe functions to a dedicated shared folder with a matching build update.
 

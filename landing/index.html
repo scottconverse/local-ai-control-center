@@ -41,8 +41,8 @@
             models without managing a pile of terminal commands.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.3.4">
-              Download v0.3.4
+            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.4.0">
+              Download v0.4.0
             </a>
             <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
               View GitHub Repo
@@ -99,6 +99,37 @@
         </div>
       </section>
 
+      <section class="section">
+        <div class="section-heading">
+          <p class="eyebrow">First Run flow</p>
+          <h2>A guided setup path instead of a blank dashboard.</h2>
+        </div>
+        <div class="setup-preview">
+          <div class="setup-screen" aria-label="First Run setup preview">
+            <div class="preview-top">First Run Setup</div>
+            <div class="preview-hero">Setup complete. You're ready to use Local AI Control Center.</div>
+            <div class="preview-steps">
+              <span>1. Check machine</span>
+              <span>2. Install tools</span>
+              <span>3. Pull assets</span>
+              <span>4. Start services</span>
+            </div>
+            <div class="preview-grid">
+              <span>GPU / VRAM ready</span>
+              <span>Docker installed</span>
+              <span>Models ready</span>
+              <span>OpenHands ready</span>
+            </div>
+          </div>
+          <div class="workflow-list" aria-label="Install flow diagram">
+            <div><span>1</span> Read hardware and explain blockers</div>
+            <div><span>2</span> Install Docker Desktop and Ollama</div>
+            <div><span>3</span> Pull the selected local models and images</div>
+            <div><span>4</span> Start services, save completion, open Dashboard next time</div>
+          </div>
+        </div>
+      </section>
+
       <section id="status" class="section muted">
         <div class="section-heading">
           <p class="eyebrow">Current product status</p>
@@ -119,14 +150,16 @@
               <li>Behavioral tests for setup hardware gates</li>
               <li>Live streaming setup logs for installs, model pulls, image pulls, and service starts</li>
               <li>Typed Ollama model list and separated setup/runner output panels</li>
+              <li>Guided First Run sequence, completion memory, rendered manual link, model switching, and reset controls</li>
+              <li>First Run visual preview and install-flow diagram</li>
             </ul>
           </article>
           <article>
             <h3>Next hardening pass</h3>
             <ul>
-              <li>Full application-logic unit tests for IPC and component state</li>
-              <li>Inline model switching and service data reset controls</li>
-              <li>First Run screenshot and install-flow diagrams</li>
+              <li>Packaged end-to-end screenshots across a clean Windows profile</li>
+              <li>Deeper Electron main-process integration tests around real child-process failure modes</li>
+              <li>Richer model metadata and recommendations for non-default local models</li>
             </ul>
           </article>
         </div>
@@ -141,7 +174,7 @@
           </p>
         </div>
         <div class="cta-actions">
-          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.3.4">
+          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.4.0">
             Get the release
           </a>
           <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
@@ -153,7 +186,7 @@
 
     <footer>
       <span>Local AI Control Center</span>
-      <span>Windows-only v0.3.4 - Local services bind to 127.0.0.1</span>
+      <span>Windows-only v0.4.0 - Local services bind to 127.0.0.1</span>
     </footer>
   </body>
 </html>

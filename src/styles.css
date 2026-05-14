@@ -180,6 +180,80 @@ main {
   color: #822a1e;
 }
 
+.completion-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border-radius: 8px;
+  background: #e8f4ef;
+  border: 1px solid #a8d6c7;
+  color: #145648;
+}
+
+.completion-banner strong,
+.completion-banner span {
+  display: block;
+}
+
+.completion-banner span {
+  margin-top: 4px;
+  color: #276d5d;
+}
+
+.setup-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.setup-progress span {
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid #d7cfc2;
+  background: #fffdf8;
+  color: #736a5f;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.setup-progress .active {
+  background: #fff2d8;
+  color: #6f4812;
+  border-color: #e5c58f;
+}
+
+.setup-progress .done {
+  background: #e8f4ef;
+  color: #145648;
+  border-color: #a8d6c7;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.step-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e8f4ef;
+  color: #145648;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .dashboard {
   padding: 24px;
   overflow: auto;
@@ -324,6 +398,12 @@ main {
   line-height: 1.45;
 }
 
+.setup-check .recovery {
+  margin-top: 8px;
+  color: #822a1e;
+  font-weight: 750;
+}
+
 .setup-list,
 .asset-list {
   list-style: none;
@@ -390,6 +470,7 @@ main {
   gap: 7px;
   font-weight: 700;
   border: 1px solid;
+  cursor: pointer;
 }
 
 .status-pill.ok {
@@ -463,20 +544,59 @@ dd {
   flex-wrap: wrap;
 }
 
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.settings-grid label {
+  display: grid;
+  gap: 6px;
+  color: #736a5f;
+  font-weight: 750;
+}
+
+.settings-grid input {
+  min-height: 38px;
+  border: 1px solid #c9c4ba;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fffdf8;
+  color: #22201c;
+  font: inherit;
+}
+
 .model-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
 }
 
 .model-list span {
+  display: grid;
+  gap: 3px;
   background: #ece7dc;
   border: 1px solid #d7cfc2;
   color: #302a23;
-  border-radius: 999px;
-  padding: 7px 10px;
+  border-radius: 8px;
+  padding: 9px 11px;
   font-weight: 700;
   font-size: 13px;
+}
+
+.model-list small {
+  color: #736a5f;
+  font-weight: 650;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed #c9c4ba;
+  border-radius: 8px;
+  color: #625a50;
+  background: #f8f4ec;
 }
 
 .steps {
@@ -507,6 +627,8 @@ dd {
 .embedded {
   height: calc(100vh - 78px);
   background: #e7e2d8;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .webview {
@@ -515,7 +637,25 @@ dd {
   border: 0;
 }
 
+.webview-guide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #ded8ce;
+  background: #fffdf8;
+  color: #4f473d;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.webview-guide button {
+  min-height: 30px;
+}
+
 .empty-frame {
+  grid-row: 1 / -1;
   height: 100%;
   display: grid;
   place-items: center;

@@ -5,6 +5,13 @@ import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import {
+  occupiedPortResult,
+  portCheckFailure,
+  pullRequiredItems,
+  resolveExternalTarget,
+  wingetMissingResult
+} from "./ipc-logic";
+import {
   diskHardwareCheck,
   gpuHardwareCheck,
   type HardwareCheck,
@@ -17,7 +24,7 @@ import {
   parseOllamaListNames,
   parseOllamaTags
 } from "./setup-logic";
-import { commandExitMessage, commandLine, commandResult, timeoutMessage, type CommandResult, type SetupOutput } from "./stream-logic";
+import { commandExitMessage, commandLine, commandResult, timeoutMessage, type CommandResult, type SetupOutput } from "../src/stream-logic";
 
 const execFileAsync = promisify(execFile);
 
@@ -29,18 +36,83 @@ const dockerExe =
   process.env.DOCKER_PATH ||
   (existsSync(fallbackDockerExe) ? fallbackDockerExe : "docker.exe");
 const ollamaExe = process.env.OLLAMA_EXE || process.env.OLLAMA_PATH || (existsSync(fallbackOllamaExe) ? fallbackOllamaExe : "ollama.exe");
-const appRoot = path.resolve(__dirname, "..");
+const appRoot = path.resolve(__dirname, path.basename(__dirname) === "electron" ? ".." : ".", "..");
 const workspaceDir = path.join(appRoot, "agent-workspace");
 const openHandsUrl = "http://localhost:3000";
 const openWebUiUrl = "http://localhost:8080";
 const ollamaApiUrl = "http://127.0.0.1:11434";
-const openHandsModel = "openai/qwen2.5-coder:14b";
-const openWebUiChatModel = "gemma4-26b-8k";
-const openWebUiImage = "ghcr.io/open-webui/open-webui:v0.9.5";
-const requiredModels = [openHandsModel, openWebUiChatModel];
-const requiredDockerImages = ["docker.openhands.dev/openhands/openhands:1.7", openWebUiImage];
+const defaultConfig = {
+  openHandsModel: "openai/qwen2.5-coder:14b",
+  openWebUiChatModel: "gemma4-26b-8k",
+  openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
+};
+const openHandsImage = "docker.openhands.dev/openhands/openhands:1.7";
+const setupStateVersion = 1;
 
-async function run(command: string, args: string[], timeout = 120_000): Promise<CommandResult> {
+type SetupMemory = {
+  version: number;
+  setupComplete: boolean;
+  completedAt: string;
+};
+
+type LocalAIConfig = typeof defaultConfig;
+
+function configPath() {
+  return path.join(app.getPath("userData"), "config.json");
+}
+
+async function readConfig(): Promise<LocalAIConfig> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(configPath(), "utf8")) as Partial<LocalAIConfig>;
+    return {
+      ...defaultConfig,
+      ...Object.fromEntries(Object.entries(parsed).filter(([, value]) => typeof value === "string" && value.trim()))
+    };
+  } catch {
+    return defaultConfig;
+  }
+}
+
+async function writeConfig(update: Partial<LocalAIConfig>): Promise<LocalAIConfig> {
+  const current = await readConfig();
+  const next = {
+    ...current,
+    ...Object.fromEntries(Object.entries(update).filter(([, value]) => typeof value === "string" && value.trim()))
+  };
+  await fs.mkdir(path.dirname(configPath()), { recursive: true });
+  await fs.writeFile(configPath(), JSON.stringify(next, null, 2), "utf8");
+  return next;
+}
+
+function requiredModels(config: LocalAIConfig) {
+  return Array.from(new Set([config.openHandsModel, config.openWebUiChatModel].filter(Boolean)));
+}
+
+function requiredDockerImages(config: LocalAIConfig) {
+  return [openHandsImage, config.openWebUiImage];
+}
+
+function setupStatePath() {
+  return path.join(app.getPath("userData"), "setup-state.json");
+}
+
+async function readSetupMemory(): Promise<SetupMemory | null> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(setupStatePath(), "utf8")) as SetupMemory;
+    return parsed.version === setupStateVersion && parsed.setupComplete ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeSetupMemory(): Promise<SetupMemory> {
+  const memory = { version: setupStateVersion, setupComplete: true, completedAt: new Date().toISOString() };
+  await fs.mkdir(path.dirname(setupStatePath()), { recursive: true });
+  await fs.writeFile(setupStatePath(), JSON.stringify(memory, null, 2), "utf8");
+  return memory;
+}
+
+async function run(command: string, args: string[], timeout = 120_000, extraEnv: NodeJS.ProcessEnv = {}): Promise<CommandResult> {
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
   const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
 
@@ -50,6 +122,7 @@ async function run(command: string, args: string[], timeout = 120_000): Promise<
       windowsHide: true,
       env: {
         ...process.env,
+        ...extraEnv,
         PATH: pathValue
       }
     });
@@ -76,7 +149,8 @@ function streamRun(
   action: string,
   command: string,
   args: string[],
-  timeout = 120_000
+  timeout = 120_000,
+  extraEnv: NodeJS.ProcessEnv = {}
 ): Promise<CommandResult> {
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
   const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
@@ -90,6 +164,7 @@ function streamRun(
       windowsHide: true,
       env: {
         ...process.env,
+        ...extraEnv,
         PATH: pathValue
       }
     });
@@ -150,7 +225,10 @@ async function portAvailable(port: number, containerName: string): Promise<Comma
     ],
     20_000
   );
-  if (!owner.ok || !owner.stdout) {
+  if (!owner.ok) {
+    return portCheckFailure(port, owner);
+  }
+  if (!owner.stdout) {
     return { ok: true, stdout: "", stderr: "" };
   }
 
@@ -159,20 +237,21 @@ async function portAvailable(port: number, containerName: string): Promise<Comma
     return { ok: true, stdout: "", stderr: "" };
   }
 
-  const [pid, name] = owner.stdout.split("|");
-  return {
-    ok: false,
-    stdout: "",
-    stderr: `Port ${port} is already in use by ${name || "another process"}${pid ? ` (PID ${pid})` : ""}. Close that app or change its port before starting this service.`
-  };
+  return occupiedPortResult(port, owner.stdout);
 }
 
 async function startPowerShellScript(scriptName: string, sender?: Electron.WebContents, action = "start-services"): Promise<CommandResult> {
   const scriptPath = path.join(appRoot, scriptName);
+  const config = await readConfig();
+  const configEnv = {
+    OPENHANDS_MODEL: config.openHandsModel,
+    OPENWEBUI_CHAT_MODEL: config.openWebUiChatModel,
+    OPENWEBUI_IMAGE: config.openWebUiImage
+  };
   if (sender) {
-    return streamRun(sender, action, "powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000);
+    return streamRun(sender, action, "powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000, configEnv);
   }
-  return run("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000);
+  return run("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000, configEnv);
 }
 
 async function startServiceWithPreflight(service: "openhands" | "openwebui"): Promise<CommandResult> {
@@ -221,6 +300,8 @@ async function getGpuCheck(): Promise<HardwareCheck> {
 }
 
 async function getSetupStatus() {
+  const setupMemory = await readSetupMemory();
+  const config = await readConfig();
   const [cpuName, memory, disk, gpu, winget, dockerVersion, dockerPs, ollamaTags, dockerImages, ollamaModels] = await Promise.all([
     getCpuName(),
     getMemoryCheck(),
@@ -237,8 +318,8 @@ async function getSetupStatus() {
   const cpu = okCheck("CPU", cpuName, "CPU brand detected. GPU and memory matter most for this stack.");
   const modelText = ollamaModels.stdout;
   const imageText = dockerImages.stdout;
-  const models = requiredModels.map((name) => ({ name, installed: modelText.includes(name) }));
-  const dockerImagesReady = requiredDockerImages.map((name) => ({ name, installed: imageText.includes(name) }));
+  const models = requiredModels(config).map((name) => ({ name, installed: modelText.includes(name) }));
+  const dockerImagesReady = requiredDockerImages(config).map((name) => ({ name, installed: imageText.includes(name) }));
   const dockerInstalled = dockerVersion.ok;
   const dockerRunning = dockerInstalled && dockerPs.ok;
   const ollamaRunning = ollamaTags && ollamaModels.ok;
@@ -258,6 +339,7 @@ async function getSetupStatus() {
   return {
     ready,
     summary: ready ? "This machine is ready for Local AI Control Center." : "Setup is not complete yet.",
+    completedAt: setupMemory?.completedAt,
     hardware: { cpu, memory, disk, gpu },
     tools: {
       winget: {
@@ -291,37 +373,19 @@ async function installWithWinget(id: string, fallbackUrl: string, sender?: Elect
   const winget = await run("winget.exe", ["--version"], 20_000);
   if (!winget.ok) {
     await shell.openExternal(fallbackUrl);
-    return {
-      ok: false,
-      stdout: "",
-      stderr: `winget was not found, so the official download page was opened instead: ${fallbackUrl}`
-    };
+    return wingetMissingResult(fallbackUrl);
   }
   return streamRun(sender, action, "winget.exe", ["install", "--exact", "--id", id, "--accept-package-agreements", "--accept-source-agreements"], 1_800_000);
 }
 
 async function pullRequiredModels(sender?: Electron.WebContents): Promise<CommandResult> {
-  const outputs: string[] = [];
-  for (const model of requiredModels) {
-    const result = await streamRun(sender, "pull-models", ollamaExe, ["pull", model], 3_600_000);
-    outputs.push(`> ollama pull ${model}\n${result.stdout || result.stderr}`);
-    if (!result.ok) {
-      return { ok: false, stdout: outputs.join("\n\n"), stderr: result.stderr };
-    }
-  }
-  return { ok: true, stdout: outputs.join("\n\n"), stderr: "" };
+  const config = await readConfig();
+  return pullRequiredItems(requiredModels(config), "ollama pull", (model) => streamRun(sender, "pull-models", ollamaExe, ["pull", model], 3_600_000));
 }
 
 async function pullRequiredDockerImages(sender?: Electron.WebContents): Promise<CommandResult> {
-  const outputs: string[] = [];
-  for (const image of requiredDockerImages) {
-    const result = await streamRun(sender, "pull-images", dockerExe, ["pull", image], 3_600_000);
-    outputs.push(`> docker pull ${image}\n${result.stdout || result.stderr}`);
-    if (!result.ok) {
-      return { ok: false, stdout: outputs.join("\n\n"), stderr: result.stderr };
-    }
-  }
-  return { ok: true, stdout: outputs.join("\n\n"), stderr: "" };
+  const config = await readConfig();
+  return pullRequiredItems(requiredDockerImages(config), "docker pull", (image) => streamRun(sender, "pull-images", dockerExe, ["pull", image], 3_600_000));
 }
 
 async function createWindow() {
@@ -374,6 +438,7 @@ app.on("window-all-closed", () => {
 
 ipcMain.handle("system:getStatus", async () => {
   await fs.mkdir(workspaceDir, { recursive: true });
+  const config = await readConfig();
   const [dockerVersion, openHandsStatus, openWebUiStatus, ollamaTagsResult, openHandsOk, openWebUiOk, modelsResult, ollamaVersion] =
     await Promise.all([
       run(dockerExe, ["--version"], 20_000),
@@ -419,15 +484,45 @@ ipcMain.handle("system:getStatus", async () => {
       workspaceDir
     },
     config: {
-      openHandsModel,
-      openWebUiChatModel,
-      openWebUiImage
+      openHandsModel: config.openHandsModel,
+      openWebUiChatModel: config.openWebUiChatModel,
+      openWebUiImage: config.openWebUiImage
     }
   };
 });
 
 ipcMain.handle("system:getSetupStatus", async () => {
   return getSetupStatus();
+});
+
+ipcMain.handle("system:markSetupComplete", async () => {
+  return writeSetupMemory();
+});
+
+ipcMain.handle("system:updateConfig", async (_event, update: Partial<LocalAIConfig>) => {
+  return writeConfig(update);
+});
+
+ipcMain.handle("system:resetServiceData", async (_event, target: "openhands" | "openwebui") => {
+  if (target === "openhands") {
+    const stop = await run(dockerExe, ["rm", "-f", "openhands-app"], 120_000);
+    await fs.rm(path.join(process.env.USERPROFILE ?? "", ".openhands"), { recursive: true, force: true });
+    return {
+      ok: true,
+      stdout: [stop.stdout, "OpenHands state folder was reset."].filter(Boolean).join("\n"),
+      stderr: stop.ok ? "" : stop.stderr
+    };
+  }
+  if (target === "openwebui") {
+    const removeContainer = await run(dockerExe, ["rm", "-f", "open-webui"], 120_000);
+    const removeVolume = await run(dockerExe, ["volume", "rm", "open-webui"], 120_000);
+    return {
+      ok: removeContainer.ok && removeVolume.ok,
+      stdout: [removeContainer.stdout, removeVolume.stdout, "Open WebUI Docker volume reset requested."].filter(Boolean).join("\n"),
+      stderr: [removeContainer.stderr, removeVolume.stderr].filter(Boolean).join("\n")
+    };
+  }
+  throw new Error(`Unsupported reset target: ${target}`);
 });
 
 ipcMain.handle("system:runSetupAction", async (event, action: string) => {
@@ -473,26 +568,17 @@ ipcMain.handle("system:stopService", async (_event, service: "openhands" | "open
 });
 
 ipcMain.handle("system:openExternal", async (_event, target: string) => {
-  const targets: Record<string, () => Promise<void>> = {
-    workspace: async () => {
-      await shell.openPath(workspaceDir);
-    },
-    manual: async () => {
-      await shell.openPath(path.join(appRoot, "USER_MANUAL.md"));
-    },
-    openhands: async () => {
-      await shell.openExternal(openHandsUrl);
-    },
-    openwebui: async () => {
-      await shell.openExternal(openWebUiUrl);
-    }
-  };
-
-  const handler = targets[target];
-  if (!handler) {
-    throw new Error(`Unsupported external target: ${target}`);
+  const destination = resolveExternalTarget(target, {
+    workspace: workspaceDir,
+    manual: "https://github.com/scottconverse/local-ai-control-center/blob/main/USER_MANUAL.md",
+    openhands: openHandsUrl,
+    openwebui: openWebUiUrl
+  });
+  if (destination.kind === "path") {
+    await shell.openPath(destination.value);
+  } else {
+    await shell.openExternal(destination.value);
   }
-  await handler();
 });
 
 ipcMain.handle("system:runTestCommand", async (_event, command: "runner" | "llm") => {

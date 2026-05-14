@@ -280,6 +280,71 @@ article p,
   background: #2b8f79;
 }
 
+.setup-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.7fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.setup-screen {
+  min-height: 360px;
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid #ded8ce;
+  background: #fffdf8;
+  box-shadow: 0 20px 70px rgba(36, 34, 31, 0.12);
+}
+
+.preview-top {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #24221f;
+  color: #fffdf8;
+  font-weight: 780;
+}
+
+.preview-hero {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #e8f4ef;
+  border: 1px solid #a8d6c7;
+  color: #145648;
+  font-weight: 780;
+}
+
+.preview-steps,
+.preview-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.preview-steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.preview-steps span,
+.preview-grid span {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f3eee5;
+  color: #514a42;
+  font-size: 13px;
+  font-weight: 760;
+  text-align: center;
+}
+
+.preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .muted {
   width: 100%;
   max-width: none;
@@ -344,6 +409,7 @@ footer {
 
   .feature-grid,
   .status-grid,
+  .setup-preview,
   .split-section,
   .cta-section {
     grid-template-columns: 1fr;

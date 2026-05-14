@@ -11,8 +11,10 @@ It gives you one GUI for:
 - Installing Docker Desktop and Ollama from the app when possible.
 - Pulling required Ollama models and Docker images.
 - Streaming setup logs while long installs and downloads run.
+- Remembering completed setup and opening to the Dashboard afterward.
 - Starting and stopping OpenHands.
 - Starting and stopping Open WebUI.
+- Switching configured local models and resetting service data from the GUI.
 - Checking Docker, Ollama, and service health.
 - Opening the writable agent workspace.
 - Opening the user manual.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendCappedOutput, commandExitMessage, commandLine, commandResult, formatSetupOutput, timeoutMessage } from "../electron/stream-logic";
+import { appendCappedOutput, commandExitMessage, commandLine, commandResult, formatSetupOutput, timeoutMessage } from "../src/stream-logic";
 
 describe("streaming setup log logic", () => {
   it("formats command lines and timeout messages", () => {

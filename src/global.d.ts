@@ -1,5 +1,11 @@
 export type ServiceName = "openhands" | "openwebui";
 export type SetupAction = "install-docker" | "install-ollama" | "pull-models" | "pull-images" | "start-services";
+export type ResetTarget = "openhands" | "openwebui";
+export type LocalAIConfig = {
+  openHandsModel: string;
+  openWebUiChatModel: string;
+  openWebUiImage: string;
+};
 export type SetupOutput = {
   action: string;
   stream: "stdout" | "stderr" | "system";
@@ -36,11 +42,7 @@ export type LocalAIStatus = {
     appRoot: string;
     workspaceDir: string;
   };
-  config: {
-    openHandsModel: string;
-    openWebUiChatModel: string;
-    openWebUiImage: string;
-  };
+  config: LocalAIConfig;
 };
 
 export type HardwareCheck = {
@@ -54,6 +56,7 @@ export type HardwareCheck = {
 export type SetupStatus = {
   ready: boolean;
   summary: string;
+  completedAt?: string;
   hardware: {
     cpu: HardwareCheck;
     memory: HardwareCheck;
@@ -77,6 +80,9 @@ declare global {
     localAI: {
       getStatus: () => Promise<LocalAIStatus>;
       getSetupStatus: () => Promise<SetupStatus>;
+      markSetupComplete: () => Promise<{ completedAt: string }>;
+      updateConfig: (config: Partial<LocalAIConfig>) => Promise<LocalAIConfig>;
+      resetServiceData: (target: ResetTarget) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       runSetupAction: (action: SetupAction) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       onSetupOutput: (callback: (output: SetupOutput) => void) => () => void;
       startService: (service: ServiceName) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
