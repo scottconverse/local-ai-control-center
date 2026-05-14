@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.1.2");
+    expect(packageJson.version).toBe("0.1.3");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -59,6 +59,19 @@ describe("service launcher scripts", () => {
     const manual = read("USER_MANUAL.md");
     expect(manual).not.toContain("GitHub Actions is disabled");
     expect(manual).not.toContain("If you want, the next upgrade");
+  });
+
+  it("does not leak internal project-state notes into the app UI", () => {
+    const app = read("src/App.tsx");
+    expect(app).not.toContain("Remote CI is disabled");
+    expect(app).not.toContain("GitHub Actions minutes");
+  });
+
+  it("keeps the user manual readable with structured tables", () => {
+    const manual = read("USER_MANUAL.md");
+    expect(manual).toContain("| Area | What it does | When to use it |");
+    expect(manual).toContain("| Problem | What to try |");
+    expect(manual).toContain("| Path | Purpose |");
   });
 
   it("constrains new windows opened from embedded content", () => {

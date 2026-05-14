@@ -337,7 +337,7 @@ function App() {
                 <CheckCircle2 size={22} />
                 <div>
                   <h3>Local Runner</h3>
-                  <p>Run verification locally first. Remote CI is disabled while GitHub Actions minutes are unavailable.</p>
+                  <p>Run verification locally before publishing, packaging, or changing service behavior.</p>
                 </div>
               </div>
               <div className="button-row">

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 - 2026-05-14
+
+- Rewrote `USER_MANUAL.md` in a more professional, human-friendly format with tables, clearer workflows, and fewer raw command blocks.
+- Removed the remaining internal GitHub Actions/minutes language from the app UI.
+- Added regression checks for app UI copy and manual structure.
+
 ## 0.1.2 - 2026-05-14
 
 - Split unit/build checks from environment-dependent service smoke checks.
