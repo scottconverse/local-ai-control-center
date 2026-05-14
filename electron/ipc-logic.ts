@@ -50,6 +50,14 @@ export function occupiedPortResult(port: number, ownerOutput: string): CommandRe
   };
 }
 
+export function isMissingContainerError(stderr: string): boolean {
+  return /No such container/i.test(stderr);
+}
+
+export function resetContainerOk(result: CommandResult): boolean {
+  return result.ok || isMissingContainerError(result.stderr);
+}
+
 export async function pullRequiredItems(
   items: string[],
   commandLabel: string,

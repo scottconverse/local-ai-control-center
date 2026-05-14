@@ -48,6 +48,12 @@ function renderApp() {
   return { container, root };
 }
 
+function clickButton(container: HTMLElement, text: string) {
+  const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent?.includes(text));
+  expect(button, `button containing "${text}"`).toBeTruthy();
+  button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
 async function mount(root: Root) {
   await act(async () => {
     root.render(<App />);
@@ -60,14 +66,13 @@ describe("App first-run behavior", () => {
   beforeEach(() => {
     unsubscribe = vi.fn();
     window.localStorage.clear();
-    window.confirm = vi.fn(() => true);
     Object.defineProperty(window, "localAI", {
       configurable: true,
       value: {
         getStatus: vi.fn().mockResolvedValue(readyStatus),
         getSetupStatus: vi.fn().mockResolvedValue(setupNeeded),
         markSetupComplete: vi.fn().mockResolvedValue({ completedAt: "2026-05-14T12:00:00.000Z" }),
-        updateConfig: vi.fn().mockResolvedValue(readyStatus.config),
+        updateConfig: vi.fn(async (config) => ({ ...readyStatus.config, ...config })),
         resetServiceData: vi.fn().mockResolvedValue({ ok: true, stdout: "reset", stderr: "" }),
         runSetupAction: vi.fn().mockResolvedValue({ ok: false, stdout: "", stderr: "installer blocked" }),
         onSetupOutput: vi.fn(() => unsubscribe),
@@ -95,7 +100,7 @@ describe("App first-run behavior", () => {
     await mount(root);
 
     await act(async () => {
-      container.querySelectorAll("button")[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      clickButton(container, "Dashboard");
     });
 
     expect(container.textContent).toContain("No models detected. Make sure Ollama is running");
@@ -107,14 +112,13 @@ describe("App first-run behavior", () => {
     const { container, root } = renderApp();
     await mount(root);
 
-    const installDocker = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("Install Docker"));
     await act(async () => {
-      installDocker?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      clickButton(container, "Install Docker");
     });
     expect(container.textContent).toContain("If Windows blocked the installer");
 
     await act(async () => {
-      container.querySelectorAll("button")[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      clickButton(container, "Dashboard");
     });
     expect(container.textContent).not.toContain("If Windows blocked the installer");
 
@@ -128,5 +132,49 @@ describe("App first-run behavior", () => {
     root.unmount();
 
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it("saves model settings and marks services as restart-required", async () => {
+    const { container, root } = renderApp();
+    await mount(root);
+
+    await act(async () => {
+      clickButton(container, "Dashboard");
+    });
+    const openHandsInput = Array.from(container.querySelectorAll("input")).find((input) => input.value.includes("qwen"));
+    expect(openHandsInput).toBeTruthy();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(openHandsInput, "new-code-model:latest");
+      openHandsInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      clickButton(container, "Save Model Settings");
+    });
+
+    expect(window.localAI.updateConfig).toHaveBeenCalledWith(expect.objectContaining({ openHandsModel: "new-code-model:latest" }));
+    expect(container.textContent).toContain("Restart required");
+
+    root.unmount();
+  });
+
+  it("does not reset service data when the in-app confirmation is cancelled", async () => {
+    const { container, root } = renderApp();
+    await mount(root);
+
+    await act(async () => {
+      clickButton(container, "Dashboard");
+    });
+    await act(async () => {
+      clickButton(container, "Reset OpenHands Data");
+    });
+    expect(container.textContent).toContain("Reset OpenHands data?");
+    await act(async () => {
+      clickButton(container, "Cancel");
+    });
+
+    expect(window.localAI.resetServiceData).not.toHaveBeenCalled();
+
+    root.unmount();
   });
 });

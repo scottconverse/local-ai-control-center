@@ -485,6 +485,20 @@ main {
   border-color: #edc48f;
 }
 
+.restart-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #fff2d8;
+  color: #6f4812;
+  border: 1px solid #e5c58f;
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .grid {
   display: grid;
   gap: 18px;
@@ -652,6 +666,34 @@ dd {
 
 .webview-guide button {
   min-height: 30px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(36, 34, 31, 0.42);
+}
+
+.modal {
+  width: min(460px, calc(100vw - 48px));
+  padding: 22px;
+  border-radius: 8px;
+  background: #fffdf8;
+  border: 1px solid #ded8ce;
+  box-shadow: 0 24px 80px rgba(36, 34, 31, 0.24);
+}
+
+.modal h3 {
+  margin: 0;
+}
+
+.modal p {
+  margin: 10px 0 18px;
+  color: #625a50;
+  line-height: 1.5;
 }
 
 .empty-frame {

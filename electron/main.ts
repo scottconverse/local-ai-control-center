@@ -9,8 +9,11 @@ import {
   portCheckFailure,
   pullRequiredItems,
   resolveExternalTarget,
+  resetContainerOk,
   wingetMissingResult
 } from "./ipc-logic";
+import { resolveAppRoot } from "./path-logic";
+import { parseSetupMemory, type SetupMemory } from "./state-logic";
 import {
   diskHardwareCheck,
   gpuHardwareCheck,
@@ -36,7 +39,11 @@ const dockerExe =
   process.env.DOCKER_PATH ||
   (existsSync(fallbackDockerExe) ? fallbackDockerExe : "docker.exe");
 const ollamaExe = process.env.OLLAMA_EXE || process.env.OLLAMA_PATH || (existsSync(fallbackOllamaExe) ? fallbackOllamaExe : "ollama.exe");
-const appRoot = path.resolve(__dirname, path.basename(__dirname) === "electron" ? ".." : ".", "..");
+const appRoot = resolveAppRoot(
+  __dirname,
+  (candidate) => existsSync(path.join(candidate, "package.json")) && existsSync(path.join(candidate, "start-openhands.ps1")),
+  process.env.LOCAL_AI_APP_ROOT
+);
 const workspaceDir = path.join(appRoot, "agent-workspace");
 const openHandsUrl = "http://localhost:3000";
 const openWebUiUrl = "http://localhost:8080";
@@ -48,12 +55,6 @@ const defaultConfig = {
 };
 const openHandsImage = "docker.openhands.dev/openhands/openhands:1.7";
 const setupStateVersion = 1;
-
-type SetupMemory = {
-  version: number;
-  setupComplete: boolean;
-  completedAt: string;
-};
 
 type LocalAIConfig = typeof defaultConfig;
 
@@ -98,8 +99,7 @@ function setupStatePath() {
 
 async function readSetupMemory(): Promise<SetupMemory | null> {
   try {
-    const parsed = JSON.parse(await fs.readFile(setupStatePath(), "utf8")) as SetupMemory;
-    return parsed.version === setupStateVersion && parsed.setupComplete ? parsed : null;
+    return parseSetupMemory(await fs.readFile(setupStatePath(), "utf8"), setupStateVersion);
   } catch {
     return null;
   }
@@ -507,10 +507,11 @@ ipcMain.handle("system:resetServiceData", async (_event, target: "openhands" | "
   if (target === "openhands") {
     const stop = await run(dockerExe, ["rm", "-f", "openhands-app"], 120_000);
     await fs.rm(path.join(process.env.USERPROFILE ?? "", ".openhands"), { recursive: true, force: true });
+    const ok = resetContainerOk(stop);
     return {
-      ok: true,
+      ok,
       stdout: [stop.stdout, "OpenHands state folder was reset."].filter(Boolean).join("\n"),
-      stderr: stop.ok ? "" : stop.stderr
+      stderr: ok ? "" : stop.stderr
     };
   }
   if (target === "openwebui") {

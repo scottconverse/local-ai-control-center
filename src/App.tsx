@@ -158,6 +158,8 @@ export function App() {
   const [setupCompleteMessage, setSetupCompleteMessage] = useState("");
   const [openHandsGuideDismissed, setOpenHandsGuideDismissed] = useState(() => window.localStorage.getItem("openhands-guide-dismissed") === "true");
   const [configDraft, setConfigDraft] = useState<LocalAIConfig>(fallbackStatus.config);
+  const [restartRequired, setRestartRequired] = useState({ openhands: false, openwebui: false });
+  const [pendingReset, setPendingReset] = useState<ResetTarget | null>(null);
   const refreshingRef = useRef(false);
   const userSelectedViewRef = useRef(false);
 
@@ -172,11 +174,12 @@ export function App() {
       setBusy("refresh");
     }
     try {
-      const [nextStatus, nextSetup] = await Promise.all([window.localAI.getStatus(), window.localAI.getSetupStatus()]);
+      const [nextStatus, setupResult] = await Promise.all([window.localAI.getStatus(), window.localAI.getSetupStatus()]);
+      let nextSetup = setupResult;
       const servicesReady = nextStatus.services.openHands.reachable && nextStatus.services.openWebUi.reachable;
       if (nextSetup.ready && servicesReady) {
         const memory = nextSetup.completedAt ? { completedAt: nextSetup.completedAt } : await window.localAI.markSetupComplete();
-        nextSetup.completedAt = memory.completedAt;
+        nextSetup = { ...nextSetup, completedAt: memory.completedAt };
         setSetupCompleteMessage(`Setup complete. Last verified ${new Date(memory.completedAt).toLocaleString()}.`);
         if (!userSelectedViewRef.current && source === "initial") {
           setView("dashboard");
@@ -245,6 +248,9 @@ export function App() {
     const result = await window.localAI.startService(service);
     setLastMessage(result.ok ? `${label} started.` : result.stderr || `Could not start ${label}.`);
     setOperationDetail(result.ok ? "" : "Check Docker Desktop, port availability, and the service logs if this repeats.");
+    if (result.ok) {
+      setRestartRequired((current) => ({ ...current, [service]: false }));
+    }
     await refresh("operation");
     setBusy(null);
   }
@@ -276,6 +282,10 @@ export function App() {
     setBusy("config-save");
     setLastMessage("Saving model settings...");
     const nextConfig = await window.localAI.updateConfig(configDraft);
+    setRestartRequired((current) => ({
+      openhands: current.openhands || nextConfig.openHandsModel !== status.config.openHandsModel,
+      openwebui: current.openwebui || nextConfig.openWebUiChatModel !== status.config.openWebUiChatModel
+    }));
     setStatus((current) => ({ ...current, config: nextConfig }));
     setLastMessage("Model settings saved. Restart affected services for changes to take effect.");
     await refresh("operation");
@@ -284,9 +294,7 @@ export function App() {
 
   async function resetServiceData(target: ResetTarget) {
     const label = target === "openhands" ? "OpenHands" : "Open WebUI";
-    if (!window.confirm(`Reset ${label} data? This stops the service and removes its local saved state.`)) {
-      return;
-    }
+    setPendingReset(null);
     setBusy(`reset-${target}`);
     setLastMessage(`Resetting ${label} data...`);
     const result = await window.localAI.resetServiceData(target);
@@ -331,6 +339,7 @@ export function App() {
   const missingImages = setup.assets.dockerImages.some((image) => !image.installed);
   const hardwareReady = setup.hardware.memory.ok && setup.hardware.disk.ok && setup.hardware.gpu.ok;
   const setupActionRunning = busy?.startsWith("setup-");
+  const workInProgress = Boolean(busy && busy !== "refresh");
   const servicesReady = openHandsReady && openWebUiReady;
   const setupComplete = setup.ready && servicesReady;
 
@@ -349,7 +358,7 @@ export function App() {
 
         <nav>
           <button className={view === "setup" ? "active" : ""} onClick={() => changeView("setup")}>
-            {setupActionRunning ? <Loader2 className="spin nav-spinner" size={19} /> : <Download size={19} />}
+            {workInProgress ? <Loader2 className="spin nav-spinner" size={19} /> : <Download size={19} />}
             First Run
           </button>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => changeView("dashboard")}>
@@ -612,10 +621,10 @@ export function App() {
                   {busy === "config-save" ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
                   Save Model Settings
                 </button>
-                <button onClick={() => resetServiceData("openhands")} disabled={!!busy}>
+                <button onClick={() => setPendingReset("openhands")} disabled={!!busy}>
                   Reset OpenHands Data
                 </button>
-                <button onClick={() => resetServiceData("openwebui")} disabled={!!busy}>
+                <button onClick={() => setPendingReset("openwebui")} disabled={!!busy}>
                   Reset Open WebUI Data
                 </button>
               </div>
@@ -634,7 +643,7 @@ export function App() {
                   <dt>Status</dt>
                   <dd>{status.services.openHands.container}</dd>
                   <dt>Model</dt>
-                  <dd>{status.config.openHandsModel}</dd>
+                  <dd>{status.config.openHandsModel} {restartRequired.openhands && <span className="restart-badge">Restart required</span>}</dd>
                   <dt>Workspace</dt>
                   <dd>{status.paths.workspaceDir || "agent-workspace"}</dd>
                 </dl>
@@ -666,7 +675,7 @@ export function App() {
                   <dt>Status</dt>
                   <dd>{status.services.openWebUi.container}</dd>
                   <dt>Default chat model</dt>
-                  <dd>{status.config.openWebUiChatModel}</dd>
+                  <dd>{status.config.openWebUiChatModel} {restartRequired.openwebui && <span className="restart-badge">Restart required</span>}</dd>
                   <dt>Image</dt>
                   <dd>{status.config.openWebUiImage}</dd>
                 </dl>
@@ -812,6 +821,20 @@ export function App() {
           </section>
         )}
       </main>
+      {pendingReset && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+          <div className="modal">
+            <h3 id="reset-title">Reset {pendingReset === "openhands" ? "OpenHands" : "Open WebUI"} data?</h3>
+            <p>This stops the service and removes saved local state. Use it when you want a clean slate or a service is stuck.</p>
+            <div className="button-row">
+              <button className="primary" onClick={() => resetServiceData(pendingReset)}>
+                Reset data
+              </button>
+              <button onClick={() => setPendingReset(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

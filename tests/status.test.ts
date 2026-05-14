@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.4.0");
+    expect(packageJson.version).toBe("0.4.1");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -255,5 +255,14 @@ describe("service launcher scripts", () => {
     expect(preload).toContain("resetServiceData");
     expect(openHandsScript).toContain("$openHandsModel");
     expect(openWebUiScript).toContain("DEFAULT_MODELS");
+  });
+
+  it("shows restart-required state and an in-app reset confirmation", () => {
+    const app = read("src/App.tsx");
+
+    expect(app).toContain("restartRequired");
+    expect(app).toContain("Restart required");
+    expect(app).toContain("modal-backdrop");
+    expect(app).not.toContain("window.confirm");
   });
 });

@@ -3,9 +3,12 @@ import {
   occupiedPortResult,
   portCheckFailure,
   pullRequiredItems,
+  resetContainerOk,
   resolveExternalTarget,
   wingetMissingResult
 } from "../electron/ipc-logic";
+import { appRootCandidates, resolveAppRoot } from "../electron/path-logic";
+import { parseSetupMemory } from "../electron/state-logic";
 
 describe("ipc behavior helpers", () => {
   it("throws on unsupported external targets", () => {
@@ -32,6 +35,11 @@ describe("ipc behavior helpers", () => {
     expect(occupiedPortResult(8080, "1234|OtherApp").stderr).toContain("OtherApp (PID 1234)");
   });
 
+  it("treats missing containers as successful reset preconditions but preserves real Docker failures", () => {
+    expect(resetContainerOk({ ok: false, stdout: "", stderr: "No such container: openhands-app" })).toBe(true);
+    expect(resetContainerOk({ ok: false, stdout: "", stderr: "Docker daemon unavailable" })).toBe(false);
+  });
+
   it("stops pulling required items at the first failed item while preserving previous output", async () => {
     const pullItem = vi
       .fn()
@@ -46,5 +54,18 @@ describe("ipc behavior helpers", () => {
     expect(result.stdout).toContain("> ollama pull second\nsecond failed");
     expect(result.stdout).not.toContain("third");
     expect(pullItem).toHaveBeenCalledTimes(2);
+  });
+
+  it("resolves app root from explicit override or known parent candidates", () => {
+    expect(appRootCandidates("C:/repo/dist-electron/electron")[0]).toBe("C:\\repo");
+    expect(resolveAppRoot("C:/repo/dist-electron/electron", (candidate) => candidate === "C:\\repo")).toBe("C:\\repo");
+    expect(resolveAppRoot("C:/repo/dist-electron/electron", (candidate) => candidate === "D:\\app", "D:\\app")).toBe("D:\\app");
+  });
+
+  it("ignores stale setup memory versions", () => {
+    expect(parseSetupMemory(JSON.stringify({ version: 0, setupComplete: true, completedAt: "2026-05-14T00:00:00.000Z" }), 1)).toBeNull();
+    expect(parseSetupMemory(JSON.stringify({ version: 1, setupComplete: true, completedAt: "2026-05-14T00:00:00.000Z" }), 1)?.completedAt).toBe(
+      "2026-05-14T00:00:00.000Z"
+    );
   });
 });

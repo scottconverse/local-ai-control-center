@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1 - 2026-05-14
+
+- Added restart-required indicators after model setting changes until affected services are restarted.
+- Replaced the reset system confirmation dialog with an in-app confirmation modal.
+- Hardened app-root resolution with an explicit override and tested parent-candidate fallback logic.
+- Added setup-state version-mismatch tests and safer OpenHands reset result handling.
+- Strengthened React tests by replacing positional button selectors and covering model save and reset-cancel behavior.
+
 ## 0.4.0 - 2026-05-14
 
 - Reworked First Run into a guided setup flow with orientation copy, step progress, completion messaging, setup-complete memory, and clearer recovery guidance.
