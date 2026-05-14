@@ -22,5 +22,8 @@ describe("streaming setup log logic", () => {
     expect(formatSetupOutput({ action: "open-webui", stream: "stdout", text: "Pulling\nDone\n" })).toBe(
       "[open-webui] Pulling\n[open-webui] Done\n"
     );
+    expect(formatSetupOutput({ action: "open-webui", stream: "stdout", text: "   \nDone\n" })).toBe(
+      "   \n[open-webui] Done\n"
+    );
   });
 });

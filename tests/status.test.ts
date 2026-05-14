@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.3.2");
+    expect(packageJson.version).toBe("0.3.3");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {

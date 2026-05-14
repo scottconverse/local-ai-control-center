@@ -39,7 +39,7 @@ export function formatSetupOutput(output: SetupOutput): string {
   return output.text
     .split(/(\r?\n)/)
     .map((part) => {
-      if (part === "\n" || part === "\r\n" || part === "") return part;
+      if (part === "\n" || part === "\r\n" || part.trim() === "") return part;
       return `${prefix} ${part}`;
     })
     .join("");

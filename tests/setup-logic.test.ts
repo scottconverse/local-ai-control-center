@@ -74,5 +74,7 @@ describe("setup hardware logic", () => {
       "gemma4-26b-8k",
       "openai/qwen2.5-coder:14b"
     ]);
+    expect(parseOllamaListNames("")).toEqual([]);
+    expect(parseOllamaListNames("NAME ID SIZE MODIFIED")).toEqual([]);
   });
 });

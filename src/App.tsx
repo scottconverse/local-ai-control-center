@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -139,7 +139,7 @@ function App() {
   const [runnerOutput, setRunnerOutput] = useState("No local runner has been started from this window yet.");
   const refreshingRef = useRef(false);
 
-  const models = useMemo(() => status.ollama.modelNames, [status.ollama.modelNames]);
+  const models = status.ollama.modelNames;
 
   async function refresh() {
     if (refreshingRef.current) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 - 2026-05-14
+
+- Confirmed the verbose local test count at 36 tests and extended fallback Ollama parser coverage for empty and header-only CLI output.
+- Simplified the renderer model list by removing a passthrough memo around typed model names.
+- Kept whitespace-only streamed setup log lines unprefixed for cleaner long-running pull output.
+
 ## 0.3.2 - 2026-05-14
 
 - Extracted streaming log formatting and command-result helpers into a testable module.
