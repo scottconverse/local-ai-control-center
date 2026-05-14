@@ -4,6 +4,18 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
+import {
+  diskHardwareCheck,
+  gpuHardwareCheck,
+  type HardwareCheck,
+  memoryHardwareCheck,
+  okCheck,
+  minimumFreeDiskGb,
+  minimumFreeVramGb,
+  minimumSystemRamGb,
+  minimumTotalVramGb,
+  parseOllamaTags
+} from "./setup-logic";
 
 const execFileAsync = promisify(execFile);
 
@@ -25,23 +37,11 @@ const openWebUiChatModel = "gemma4-26b-8k";
 const openWebUiImage = "ghcr.io/open-webui/open-webui:v0.9.5";
 const requiredModels = [openHandsModel, openWebUiChatModel];
 const requiredDockerImages = ["docker.openhands.dev/openhands/openhands:1.7", openWebUiImage];
-const minimumSystemRamGb = 32;
-const minimumFreeDiskGb = 80;
-const minimumTotalVramGb = 16;
-const minimumFreeVramGb = 14.5;
 
 type CommandResult = {
   ok: boolean;
   stdout: string;
   stderr: string;
-};
-
-type HardwareCheck = {
-  ok: boolean;
-  severity: "ok" | "warn" | "fail";
-  label: string;
-  value: string;
-  detail: string;
 };
 
 async function run(command: string, args: string[], timeout = 120_000): Promise<CommandResult> {
@@ -68,13 +68,17 @@ async function run(command: string, args: string[], timeout = 120_000): Promise<
   }
 }
 
-async function fetchOk(url: string): Promise<boolean> {
+async function fetchText(url: string): Promise<{ ok: boolean; text: string }> {
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(4_000) });
-    return response.ok;
+    return { ok: response.ok, text: response.ok ? await response.text() : "" };
   } catch {
-    return false;
+    return { ok: false, text: "" };
   }
+}
+
+async function fetchOk(url: string): Promise<boolean> {
+  return (await fetchText(url)).ok;
 }
 
 async function getContainerStatus(name: string): Promise<string> {
@@ -82,17 +86,46 @@ async function getContainerStatus(name: string): Promise<string> {
   return result.ok ? result.stdout : "not-found";
 }
 
+async function portAvailable(port: number, containerName: string): Promise<CommandResult> {
+  const owner = await run(
+    "powershell.exe",
+    [
+      "-NoProfile",
+      "-Command",
+      `$c=Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if ($c) { $p=Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue; "$($c.OwningProcess)|$($p.ProcessName)" }`
+    ],
+    20_000
+  );
+  if (!owner.ok || !owner.stdout) {
+    return { ok: true, stdout: "", stderr: "" };
+  }
+
+  const status = await getContainerStatus(containerName);
+  if (status === "running") {
+    return { ok: true, stdout: "", stderr: "" };
+  }
+
+  const [pid, name] = owner.stdout.split("|");
+  return {
+    ok: false,
+    stdout: "",
+    stderr: `Port ${port} is already in use by ${name || "another process"}${pid ? ` (PID ${pid})` : ""}. Close that app or change its port before starting this service.`
+  };
+}
+
 async function startPowerShellScript(scriptName: string): Promise<CommandResult> {
   const scriptPath = path.join(appRoot, scriptName);
   return run("powershell.exe", ["-ExecutionPolicy", "Bypass", "-File", scriptPath], 900_000);
 }
 
-function okCheck(label: string, value: string, detail: string): HardwareCheck {
-  return { ok: true, severity: "ok", label, value, detail };
-}
-
-function failCheck(label: string, value: string, detail: string): HardwareCheck {
-  return { ok: false, severity: "fail", label, value, detail };
+async function startServiceWithPreflight(service: "openhands" | "openwebui"): Promise<CommandResult> {
+  const port = service === "openhands" ? 3000 : 8080;
+  const container = service === "openhands" ? "openhands-app" : "open-webui";
+  const portCheck = await portAvailable(port, container);
+  if (!portCheck.ok) {
+    return portCheck;
+  }
+  return startPowerShellScript(service === "openhands" ? "start-openhands.ps1" : "start-openwebui.ps1");
 }
 
 async function getCpuName(): Promise<string> {
@@ -109,13 +142,7 @@ async function getMemoryCheck(): Promise<HardwareCheck> {
   const [totalRaw, freeRaw] = result.stdout.split("|");
   const total = Number.parseFloat(totalRaw);
   const free = Number.parseFloat(freeRaw);
-  if (!result.ok || Number.isNaN(total)) {
-    return failCheck("System RAM", "Unknown", "Could not read installed memory.");
-  }
-  if (total >= minimumSystemRamGb) {
-    return okCheck("System RAM", `${total} GB`, `${Number.isNaN(free) ? "?" : free} GB free. Recommended minimum is ${minimumSystemRamGb} GB.`);
-  }
-  return failCheck("System RAM", `${total} GB`, `This stack is meant for hefty local AI boxes. Install at least ${minimumSystemRamGb} GB system RAM.`);
+  return memoryHardwareCheck(total, free, result.ok);
 }
 
 async function getDiskCheck(): Promise<HardwareCheck> {
@@ -128,48 +155,12 @@ async function getDiskCheck(): Promise<HardwareCheck> {
   const [freeRaw, totalRaw] = result.stdout.split("|");
   const free = Number.parseFloat(freeRaw);
   const total = Number.parseFloat(totalRaw);
-  if (!result.ok || Number.isNaN(free)) {
-    return failCheck("Disk", "Unknown", "Could not read free disk space.");
-  }
-  if (free >= minimumFreeDiskGb) {
-    return okCheck("Disk", `${free} GB free`, `${Number.isNaN(total) ? "?" : total} GB total on ${drive}. Recommended free space is ${minimumFreeDiskGb} GB.`);
-  }
-  return failCheck("Disk", `${free} GB free`, `Free at least ${minimumFreeDiskGb} GB before pulling models and Docker images.`);
+  return diskHardwareCheck(free, total, drive, result.ok);
 }
 
 async function getGpuCheck(): Promise<HardwareCheck> {
   const result = await run("nvidia-smi.exe", ["--query-gpu=name,memory.total,memory.free", "--format=csv,noheader,nounits"], 20_000);
-  if (!result.ok || !result.stdout) {
-    return failCheck("GPU / VRAM", "Not detected", "NVIDIA GPU was not detected through nvidia-smi. OpenHands-ready local models need a CUDA GPU with about 16 GB available VRAM.");
-  }
-
-  const rows = result.stdout
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [name, totalMb, freeMb] = line.split(",").map((part) => part.trim());
-      return {
-        name,
-        totalGb: Number.parseFloat(totalMb) / 1024,
-        freeGb: Number.parseFloat(freeMb) / 1024
-      };
-    })
-    .filter((gpu) => !Number.isNaN(gpu.totalGb));
-  const best = rows.sort((a, b) => b.totalGb - a.totalGb)[0];
-  if (!best) {
-    return failCheck("GPU / VRAM", "Unknown", "nvidia-smi responded, but the app could not parse VRAM details.");
-  }
-
-  const total = Math.round(best.totalGb * 10) / 10;
-  const free = Math.round(best.freeGb * 10) / 10;
-  if (total >= minimumTotalVramGb && free >= minimumFreeVramGb) {
-    return okCheck("GPU / VRAM", `${best.name}`, `${total} GB total, ${free} GB free. This meets the local OpenHands target.`);
-  }
-  if (total >= minimumTotalVramGb) {
-    return failCheck("GPU / VRAM", `${best.name}`, `${total} GB total, ${free} GB free. Close other GPU apps before pulling/running the recommended models.`);
-  }
-  return failCheck("GPU / VRAM", `${best.name}`, `${total} GB total, ${free} GB free. Recommended minimum is a CUDA GPU with ${minimumTotalVramGb} GB VRAM.`);
+  return gpuHardwareCheck(result.stdout, result.ok);
 }
 
 async function getSetupStatus() {
@@ -326,17 +317,19 @@ app.on("window-all-closed", () => {
 
 ipcMain.handle("system:getStatus", async () => {
   await fs.mkdir(workspaceDir, { recursive: true });
-  const [dockerVersion, openHandsStatus, openWebUiStatus, ollamaOk, openHandsOk, openWebUiOk, modelsResult, ollamaVersion] =
+  const [dockerVersion, openHandsStatus, openWebUiStatus, ollamaTagsResult, openHandsOk, openWebUiOk, modelsResult, ollamaVersion] =
     await Promise.all([
       run(dockerExe, ["--version"], 20_000),
       getContainerStatus("openhands-app"),
       getContainerStatus("open-webui"),
-      fetchOk(`${ollamaApiUrl}/api/tags`),
+      fetchText(`${ollamaApiUrl}/api/tags`),
       fetchOk(openHandsUrl),
       fetchOk(openWebUiUrl),
       run(ollamaExe, ["list"], 20_000),
       run(ollamaExe, ["--version"], 20_000)
     ]);
+  const apiModels = parseOllamaTags(ollamaTagsResult.text);
+  const modelListOutput = apiModels.length ? `NAME\n${apiModels.join("\n")}` : modelsResult.stdout;
 
   return {
     docker: {
@@ -346,11 +339,11 @@ ipcMain.handle("system:getStatus", async () => {
       message: dockerVersion.ok ? "Docker command is available." : "Docker was not found. Set DOCKER_EXE to your Docker-compatible executable path."
     },
     ollama: {
-      ok: ollamaOk && modelsResult.ok,
-      models: modelsResult.stdout,
+      ok: ollamaTagsResult.ok && (modelsResult.ok || apiModels.length > 0),
+      models: modelListOutput,
       executable: ollamaExe,
       version: ollamaVersion.stdout || ollamaVersion.stderr,
-      message: ollamaOk && modelsResult.ok ? "Ollama is reachable." : "Ollama is not reachable. Start Ollama and confirm it is available on port 11434."
+      message: ollamaTagsResult.ok && (modelsResult.ok || apiModels.length > 0) ? "Ollama is reachable." : "Ollama is not reachable. Start Ollama and confirm it is available on port 11434."
     },
     services: {
       openHands: {
@@ -391,13 +384,16 @@ ipcMain.handle("system:runSetupAction", async (_event, action: string) => {
     case "pull-images":
       return pullRequiredDockerImages();
     case "start-services": {
-      const openHands = await startPowerShellScript("start-openhands.ps1");
-      if (!openHands.ok) return openHands;
-      const openWebUi = await startPowerShellScript("start-openwebui.ps1");
+      const [openHandsPort, openWebUiPort] = await Promise.all([portAvailable(3000, "openhands-app"), portAvailable(8080, "open-webui")]);
+      const blocked = [openHandsPort, openWebUiPort].filter((result) => !result.ok);
+      if (blocked.length) {
+        return { ok: false, stdout: "", stderr: blocked.map((result) => result.stderr).join("\n") };
+      }
+      const [openHands, openWebUi] = await Promise.all([startPowerShellScript("start-openhands.ps1"), startPowerShellScript("start-openwebui.ps1")]);
       return {
-        ok: openWebUi.ok,
+        ok: openHands.ok && openWebUi.ok,
         stdout: [openHands.stdout, openWebUi.stdout].filter(Boolean).join("\n\n"),
-        stderr: openWebUi.stderr
+        stderr: [openHands.stderr, openWebUi.stderr].filter(Boolean).join("\n\n")
       };
     }
     default:
@@ -406,7 +402,7 @@ ipcMain.handle("system:runSetupAction", async (_event, action: string) => {
 });
 
 ipcMain.handle("system:startService", async (_event, service: "openhands" | "openwebui") => {
-  return startPowerShellScript(service === "openhands" ? "start-openhands.ps1" : "start-openwebui.ps1");
+  return startServiceWithPreflight(service);
 });
 
 ipcMain.handle("system:stopService", async (_event, service: "openhands" | "openwebui") => {

@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.2.0");
+    expect(packageJson.version).toBe("0.2.1");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -92,10 +92,12 @@ describe("service launcher scripts", () => {
 
   it("adds first-run setup IPC for hardware checks and install actions", () => {
     const mainProcess = read("electron/main.ts");
+    const setupLogic = read("electron/setup-logic.ts");
     const preload = read("electron/preload.ts");
     const globalTypes = read("src/global.d.ts");
 
-    expect(mainProcess).toContain("minimumTotalVramGb = 16");
+    expect(setupLogic).toContain("minimumTotalVramGb = 16");
+    expect(mainProcess).toContain("portAvailable");
     expect(mainProcess).toContain("getSetupStatus");
     expect(mainProcess).toContain("installWithWinget");
     expect(mainProcess).toContain("pullRequiredModels");
@@ -123,6 +125,23 @@ describe("service launcher scripts", () => {
     expect(manual).toContain("## First Run Setup");
     expect(manual).toContain("| GPU / VRAM |");
     expect(landing).toContain("First-run setup wizard with hardware and VRAM checks");
+    expect(landing).toContain("Port-conflict preflight before service starts");
     expect(landing).not.toContain("Prerequisite setup flow for non-developer users");
+    expect(landing).not.toContain("Port-conflict detection before service start");
+  });
+
+  it("clarifies local-only Open WebUI auth implications for non-technical users", () => {
+    const manual = read("USER_MANUAL.md");
+
+    expect(manual).toContain("Open WebUI has no login screen by default");
+    expect(manual).toContain("Anyone who can reach port `8080` on your machine can use it");
+  });
+
+  it("adds accessibility and isolation metadata to embedded service views", () => {
+    const app = read("src/App.tsx");
+
+    expect(app).toContain('aria-label="Refresh status"');
+    expect(app).toContain('title="OpenHands Agent"');
+    expect(app).toContain('partition="persist:openhands"');
   });
 });

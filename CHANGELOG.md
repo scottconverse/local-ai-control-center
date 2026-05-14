@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 - 2026-05-14
+
+- Added behavioral tests for setup hardware parsing, VRAM thresholds, memory/disk gates, and Ollama tag parsing.
+- Added port-conflict preflight checks before starting OpenHands or Open WebUI.
+- Parallelized the setup action that starts both local services.
+- Replaced dashboard model parsing with Ollama's JSON tags API where available.
+- Cleared stale operation banners on view navigation and added small accessibility/session isolation polish.
+- Clarified that `WEBUI_AUTH=False` means Open WebUI has no login screen by default.
+
 ## 0.2.0 - 2026-05-14
 
 - Added a first-run setup wizard that scans CPU, system RAM, disk space, NVIDIA GPU, and available VRAM before setup.

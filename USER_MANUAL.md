@@ -183,7 +183,7 @@ Authentication is disabled for this local-only setup:
 WEBUI_AUTH=False
 ```
 
-Keep Open WebUI bound to localhost unless you deliberately configure authentication and network exposure.
+Plain meaning: Open WebUI has no login screen by default. Anyone who can reach port `8080` on your machine can use it. Keep Open WebUI bound to localhost unless you deliberately configure authentication and network exposure.
 
 ## Web Browsing
 

@@ -210,6 +210,11 @@ function App() {
     setBusy(null);
   }
 
+  function changeView(nextView: View) {
+    setView(nextView);
+    setOperationDetail("");
+  }
+
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 30_000);
@@ -242,30 +247,30 @@ function App() {
         </div>
 
         <nav>
-          <button className={view === "setup" ? "active" : ""} onClick={() => setView("setup")}>
+          <button className={view === "setup" ? "active" : ""} onClick={() => changeView("setup")}>
             <Download size={19} />
             First Run
           </button>
-          <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}>
+          <button className={view === "dashboard" ? "active" : ""} onClick={() => changeView("dashboard")}>
             <MonitorCog size={19} />
             Dashboard
           </button>
-          <button className={view === "openhands" ? "active" : ""} onClick={() => setView("openhands")}>
+          <button className={view === "openhands" ? "active" : ""} onClick={() => changeView("openhands")}>
             <TerminalSquare size={19} />
             OpenHands
           </button>
-          <button className={view === "openwebui" ? "active" : ""} onClick={() => setView("openwebui")}>
+          <button className={view === "openwebui" ? "active" : ""} onClick={() => changeView("openwebui")}>
             <MessageSquare size={19} />
             Open WebUI
           </button>
         </nav>
 
         <div className="sidebar-actions">
-          <button onClick={() => window.localAI.openExternal("workspace")}>
+          <button aria-label="Open workspace folder" onClick={() => window.localAI.openExternal("workspace")}>
             <FolderOpen size={18} />
             Workspace
           </button>
-          <button onClick={() => window.localAI.openExternal("manual")}>
+          <button aria-label="Open user manual file" onClick={() => window.localAI.openExternal("manual")}>
             <ExternalLink size={18} />
             Manual File
           </button>
@@ -283,7 +288,7 @@ function App() {
             </h2>
             <p>{lastMessage}</p>
           </div>
-          <button className="refresh" onClick={refresh} disabled={busy === "refresh"}>
+          <button className="refresh" aria-label="Refresh status" onClick={refresh} disabled={!!busy}>
             {busy === "refresh" ? <Loader2 className="spin" size={18} /> : <RefreshCw size={18} />}
             Refresh
           </button>
@@ -589,7 +594,7 @@ function App() {
         {view === "openhands" && (
           <section className="embedded">
             {openHandsReady ? (
-              <webview className="webview" src={status.services.openHands.url} />
+              <webview className="webview" title="OpenHands Agent" partition="persist:openhands" src={status.services.openHands.url} />
             ) : (
               <EmptyWebFrame
                 title="OpenHands"
@@ -603,7 +608,7 @@ function App() {
         {view === "openwebui" && (
           <section className="embedded">
             {openWebUiReady ? (
-              <webview className="webview" src={status.services.openWebUi.url} />
+              <webview className="webview" title="Open WebUI Chat" partition="persist:openwebui" src={status.services.openWebUi.url} />
             ) : (
               <EmptyWebFrame
                 title="Open WebUI"
