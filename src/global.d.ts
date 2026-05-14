@@ -5,6 +5,7 @@ export type LocalAIConfig = {
   openHandsModel: string;
   openWebUiChatModel: string;
   openWebUiImage: string;
+  modelLabels: Record<string, string>;
 };
 export type SetupOutput = {
   action: string;

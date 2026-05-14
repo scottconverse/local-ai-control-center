@@ -42,7 +42,8 @@ const fallbackStatus: LocalAIStatus = {
   config: {
     openHandsModel: "openai/qwen2.5-coder:14b",
     openWebUiChatModel: "gemma4-26b-8k",
-    openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
+    openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5",
+    modelLabels: {}
   }
 };
 
@@ -72,7 +73,8 @@ const modelDescriptions: Record<string, string> = {
   "gemma4-26b-8k": "General chat"
 };
 
-export function describeModel(model: string): string {
+export function describeModel(model: string, customLabels: Record<string, string> = {}): string {
+  if (customLabels[model]?.trim()) return customLabels[model].trim();
   const lower = model.toLowerCase();
   if (modelDescriptions[model]) return modelDescriptions[model];
   if (lower.includes("coder") || lower.includes("code") || lower.includes("qwen")) return "Likely useful for code and project work";
@@ -300,6 +302,16 @@ export function App() {
     setLastMessage("Model settings saved. Restart affected services for changes to take effect.");
     await refresh("operation");
     setBusy(null);
+  }
+
+  function updateModelLabel(model: string, label: string) {
+    setConfigDraft((current) => ({
+      ...current,
+      modelLabels: {
+        ...current.modelLabels,
+        [model]: label
+      }
+    }));
   }
 
   async function resetServiceData(target: ResetTarget) {
@@ -629,6 +641,25 @@ export function App() {
                   ))}
                 </datalist>
               </div>
+              <p className="settings-note">
+                Recommendations are guessed from model names. Add labels for private or team-specific models to make the Dashboard readable.
+              </p>
+              {models.length > 0 && (
+                <div className="model-label-editor">
+                  <h4>Custom model labels</h4>
+                  {models.map((model) => (
+                    <label key={model}>
+                      <span>{model}</span>
+                      <input
+                        aria-label={`Label for ${model}`}
+                        value={configDraft.modelLabels[model] ?? ""}
+                        placeholder={describeModel(model)}
+                        onChange={(event) => updateModelLabel(model, event.target.value)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              )}
               <div className="button-row">
                 <button className="primary" onClick={saveConfig} disabled={!!busy}>
                   {busy === "config-save" ? <Loader2 className="spin" size={17} /> : <CheckCircle2 size={17} />}
@@ -723,7 +754,7 @@ export function App() {
                     models.map((model) => (
                       <span key={model}>
                         <strong>{model}</strong>
-                        <small>{describeModel(model)}</small>
+                        <small>{describeModel(model, status.config.modelLabels)}</small>
                       </span>
                     ))
                   ) : (

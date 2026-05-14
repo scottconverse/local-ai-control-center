@@ -41,8 +41,8 @@
             models without managing a pile of terminal commands.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.4.3">
-              Download v0.4.3
+            <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.5.0">
+              Download v0.5.0
             </a>
             <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
               View GitHub Repo
@@ -105,22 +105,11 @@
           <h2>A guided setup path instead of a blank dashboard.</h2>
         </div>
         <div class="setup-preview">
-          <div class="setup-screen" aria-label="First Run setup preview">
-            <div class="preview-top">First Run Setup</div>
-            <div class="preview-hero">Setup complete. You're ready to use Local AI Control Center.</div>
-            <div class="preview-steps">
-              <span>1. Check machine</span>
-              <span>2. Install tools</span>
-              <span>3. Pull assets</span>
-              <span>4. Start services</span>
-            </div>
-            <div class="preview-grid">
-              <span>GPU / VRAM ready</span>
-              <span>Docker installed</span>
-              <span>Models ready</span>
-              <span>OpenHands ready</span>
-            </div>
-          </div>
+          <img
+            class="preview-image"
+            src="./assets/control-center-first-run.png"
+            alt="Packaged Local AI Control Center First Run setup screen with hardware checks and step progress"
+          />
           <div class="workflow-list" aria-label="Install flow diagram">
             <div><span>1</span> Read hardware and explain blockers</div>
             <div><span>2</span> Install Docker Desktop and Ollama</div>
@@ -152,15 +141,14 @@
               <li>Typed Ollama model list and separated setup/runner output panels</li>
               <li>Guided First Run sequence, completion memory, rendered manual link, model switching, and reset controls</li>
               <li>First Run visual preview and install-flow diagram</li>
+              <li>Editable model labels and recommendations for custom model libraries</li>
+              <li>Real child-process integration tests for timeout and error-exit behavior</li>
+              <li>Packaged end-to-end screenshots captured from a clean user-data launch</li>
             </ul>
           </article>
           <article>
-            <h3>Next hardening pass</h3>
-            <ul>
-              <li>Deeper Electron main-process integration tests around real child-process failure modes</li>
-              <li>Packaged end-to-end screenshots across a clean Windows profile</li>
-              <li>Editable model labels and recommendations for custom model libraries</li>
-            </ul>
+            <h3>Post-v0.4.3 punch list</h3>
+            <p>No open items remain from the ordered punch list.</p>
           </article>
         </div>
       </section>
@@ -174,7 +162,7 @@
           </p>
         </div>
         <div class="cta-actions">
-          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.4.3">
+          <a class="button primary" href="https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.5.0">
             Get the release
           </a>
           <a class="button secondary" href="https://github.com/scottconverse/local-ai-control-center">
@@ -186,7 +174,7 @@
 
     <footer>
       <span>Local AI Control Center</span>
-      <span>Windows-only v0.4.3 - Local services bind to 127.0.0.1</span>
+      <span>Windows-only v0.5.0 - Local services bind to 127.0.0.1</span>
     </footer>
   </body>
 </html>

@@ -582,6 +582,47 @@ dd {
   font: inherit;
 }
 
+.settings-note {
+  margin: 0 0 14px;
+  color: #736a5f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.model-label-editor {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8f4ec;
+  border: 1px solid #ded8ce;
+}
+
+.model-label-editor h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.model-label-editor label {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  color: #736a5f;
+  font-weight: 750;
+}
+
+.model-label-editor input {
+  min-height: 36px;
+  border: 1px solid #c9c4ba;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fffdf8;
+  color: #22201c;
+  font: inherit;
+}
+
 .model-list {
   display: grid;
   gap: 8px;

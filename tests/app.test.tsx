@@ -16,7 +16,8 @@ const readyStatus: LocalAIStatus = {
   config: {
     openHandsModel: "openai/qwen2.5-coder:14b",
     openWebUiChatModel: "gemma4-26b-8k",
-    openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
+    openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5",
+    modelLabels: {}
   }
 };
 
@@ -158,6 +159,39 @@ describe("App first-run behavior", () => {
     root.unmount();
   });
 
+  it("saves custom labels for private model libraries", async () => {
+    const statusWithPrivateModel: LocalAIStatus = {
+      ...readyStatus,
+      ollama: { ...readyStatus.ollama, modelNames: ["private-model:latest"] },
+      config: { ...readyStatus.config, modelLabels: {} }
+    };
+    window.localAI.getStatus = vi.fn().mockResolvedValue(statusWithPrivateModel);
+    window.localAI.updateConfig = vi.fn(async (config) => ({ ...statusWithPrivateModel.config, ...config }));
+    const { container, root } = renderApp();
+    await mount(root);
+
+    await act(async () => {
+      clickButton(container, "Dashboard");
+    });
+    expect(container.textContent).toContain("Recommendations are guessed from model names");
+    const labelInput = container.querySelector('input[aria-label="Label for private-model:latest"]') as HTMLInputElement | null;
+    expect(labelInput).toBeTruthy();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(labelInput, "Internal research assistant");
+      labelInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      clickButton(container, "Save Model Settings");
+    });
+
+    expect(window.localAI.updateConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ modelLabels: { "private-model:latest": "Internal research assistant" } })
+    );
+
+    root.unmount();
+  });
+
   it("does not reset service data when the in-app confirmation is cancelled", async () => {
     const { container, root } = renderApp();
     await mount(root);
@@ -213,8 +247,11 @@ describe("App first-run behavior", () => {
 describe("model descriptions", () => {
   it("describes default and non-default local models", () => {
     expect(describeModel("openai/qwen2.5-coder:14b")).toBe("Code and project work");
+    expect(describeModel("deepseek-coder:6.7b")).toBe("Likely useful for code and project work");
+    expect(describeModel("llava-vl:latest")).toBe("Vision or image-capable model");
     expect(describeModel("llama3:8b")).toBe("General local chat and reasoning");
     expect(describeModel("nomic-embed-text:latest")).toBe("Embedding/search model");
+    expect(describeModel("private-model:latest", { "private-model:latest": "Internal research assistant" })).toBe("Internal research assistant");
     expect(describeModel("custom-model:latest")).toBe("Installed local model");
   });
 });

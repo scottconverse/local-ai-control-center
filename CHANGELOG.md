@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-05-14
+
+- Added editable model labels so private or uncommon Ollama model names can have user-friendly Dashboard descriptions.
+- Added keyword recommendations for code, chat, embedding, and vision model names that do not exactly match the default models.
+- Covered the `startPowerShellScript` missing-file guard at the main-process callsite.
+- Added real child-process integration tests for error-exit and streamed timeout behavior.
+- Updated public docs and landing copy to reflect model labels and shipped process coverage.
+
 ## 0.4.3 - 2026-05-14
 
 - Broadened model descriptions so common non-default local models get useful identity labels in the Dashboard.

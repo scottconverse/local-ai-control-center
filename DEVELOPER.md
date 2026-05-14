@@ -87,6 +87,14 @@ The output is written to:
 release\
 ```
 
+Refresh the landing screenshots from the packaged build:
+
+```powershell
+npm run screenshots:packaged
+```
+
+The screenshot script launches `release\win-unpacked\Local AI Control Center.exe` with a clean temporary user-data directory and writes the captured First Run and Dashboard images to `landing\assets\`.
+
 ## Manual Service Commands
 
 Start OpenHands:

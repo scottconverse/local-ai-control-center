@@ -39,7 +39,13 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.4.3");
+    expect(packageJson.version).toBe("0.5.0");
+  });
+
+  it("uses relative production assets so the packaged app is not blank", () => {
+    const viteConfig = read("vite.config.ts");
+
+    expect(viteConfig).toContain('base: "./"');
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -157,13 +163,14 @@ describe("service launcher scripts", () => {
 
   it("streams setup output from main through preload into the first-run panel", () => {
     const mainProcess = read("electron/main.ts");
+    const processLogic = read("electron/process-logic.ts");
     const preload = read("electron/preload.ts");
     const app = read("src/App.tsx");
     const globalTypes = read("src/global.d.ts");
 
     expect(mainProcess).toContain("setup:output");
     expect(mainProcess).toContain("streamRun");
-    expect(mainProcess).toContain("commandResult");
+    expect(processLogic).toContain("commandResult");
     expect(mainProcess).toContain("sender.isDestroyed()");
     expect(mainProcess).toContain("startPowerShellScript(\"start-openhands.ps1\", sender, \"openhands\")");
     expect(mainProcess).toContain("startPowerShellScript(\"start-openwebui.ps1\", sender, \"open-webui\")");
@@ -253,10 +260,29 @@ describe("service launcher scripts", () => {
     expect(mainProcess).toContain("https://github.com/scottconverse/local-ai-control-center/blob/main/USER_MANUAL.md");
     expect(app).toContain("User Manual");
     expect(app).toContain("Model Settings And Reset Controls");
+    expect(app).toContain("Custom model labels");
+    expect(app).toContain("Recommendations are guessed from model names");
     expect(preload).toContain("updateConfig");
     expect(preload).toContain("resetServiceData");
     expect(openHandsScript).toContain("$openHandsModel");
     expect(openWebUiScript).toContain("DEFAULT_MODELS");
+  });
+
+  it("documents packaged screenshots and keeps the public punch list empty", () => {
+    const packageJson = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
+    const landing = read("landing/index.html");
+    const readme = read("README.md");
+    const manual = read("USER_MANUAL.md");
+    const developer = read("DEVELOPER.md");
+
+    expect(packageJson.scripts["screenshots:packaged"]).toBe("node scripts/capture-packaged-screenshots.cjs");
+    expect(landing).toContain("control-center-first-run.png");
+    expect(landing).toContain("Packaged end-to-end screenshots captured from a clean user-data launch");
+    expect(landing).toContain("No open items remain from the ordered punch list.");
+    expect(landing).not.toContain("Next hardening pass");
+    expect(readme).toContain("Editable labels and model-name recommendations");
+    expect(manual).toContain("label installed local models");
+    expect(developer).toContain("npm run screenshots:packaged");
   });
 
   it("shows restart-required state and an in-app reset confirmation", () => {

@@ -287,6 +287,16 @@ article p,
   align-items: stretch;
 }
 
+.preview-image {
+  width: 100%;
+  min-height: 360px;
+  object-fit: cover;
+  object-position: left top;
+  border-radius: 8px;
+  border: 1px solid #ded8ce;
+  box-shadow: 0 20px 70px rgba(36, 34, 31, 0.12);
+}
+
 .setup-screen {
   min-height: 360px;
   padding: 18px;

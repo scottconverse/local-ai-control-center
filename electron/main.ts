@@ -1,7 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
-import { execFile, spawn } from "node:child_process";
-import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import {
@@ -13,6 +11,7 @@ import {
   wingetMissingResult
 } from "./ipc-logic";
 import { resolveAppRoot } from "./path-logic";
+import { runProcess, streamProcess } from "./process-logic";
 import { parseSetupMemory, type SetupMemory } from "./state-logic";
 import {
   diskHardwareCheck,
@@ -27,9 +26,7 @@ import {
   parseOllamaListNames,
   parseOllamaTags
 } from "./setup-logic";
-import { commandExitMessage, commandLine, commandResult, missingScriptResult, timeoutMessage, type CommandResult, type SetupOutput } from "../src/stream-logic";
-
-const execFileAsync = promisify(execFile);
+import { missingScriptResult, type CommandResult, type SetupOutput } from "../src/stream-logic";
 
 const fallbackDockerBin = "C:\\Program Files\\Docker\\Docker\\resources\\bin";
 const fallbackDockerExe = path.join(fallbackDockerBin, "docker.exe");
@@ -51,7 +48,8 @@ const ollamaApiUrl = "http://127.0.0.1:11434";
 const defaultConfig = {
   openHandsModel: "openai/qwen2.5-coder:14b",
   openWebUiChatModel: "gemma4-26b-8k",
-  openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
+  openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5",
+  modelLabels: {} as Record<string, string>
 };
 const openHandsImage = "docker.openhands.dev/openhands/openhands:1.7";
 const setupStateVersion = 1;
@@ -65,9 +63,17 @@ function configPath() {
 async function readConfig(): Promise<LocalAIConfig> {
   try {
     const parsed = JSON.parse(await fs.readFile(configPath(), "utf8")) as Partial<LocalAIConfig>;
+    const stringConfig = Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+    );
+    const modelLabels =
+      parsed.modelLabels && typeof parsed.modelLabels === "object"
+        ? Object.fromEntries(Object.entries(parsed.modelLabels).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0))
+        : {};
     return {
       ...defaultConfig,
-      ...Object.fromEntries(Object.entries(parsed).filter(([, value]) => typeof value === "string" && value.trim()))
+      ...stringConfig,
+      modelLabels
     };
   } catch {
     return defaultConfig;
@@ -76,9 +82,17 @@ async function readConfig(): Promise<LocalAIConfig> {
 
 async function writeConfig(update: Partial<LocalAIConfig>): Promise<LocalAIConfig> {
   const current = await readConfig();
+  const stringConfig = Object.fromEntries(
+    Object.entries(update).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+  );
+  const modelLabels =
+    update.modelLabels && typeof update.modelLabels === "object"
+      ? Object.fromEntries(Object.entries(update.modelLabels).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0))
+      : current.modelLabels;
   const next = {
     ...current,
-    ...Object.fromEntries(Object.entries(update).filter(([, value]) => typeof value === "string" && value.trim()))
+    ...stringConfig,
+    modelLabels
   };
   await fs.mkdir(path.dirname(configPath()), { recursive: true });
   await fs.writeFile(configPath(), JSON.stringify(next, null, 2), "utf8");
@@ -116,25 +130,14 @@ async function run(command: string, args: string[], timeout = 120_000, extraEnv:
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
   const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
 
-  try {
-    const result = await execFileAsync(command, args, {
-      timeout,
-      windowsHide: true,
-      env: {
-        ...process.env,
-        ...extraEnv,
-        PATH: pathValue
-      }
-    });
-    return { ok: true, stdout: result.stdout.trim(), stderr: result.stderr.trim() };
-  } catch (error) {
-    const err = error as NodeJS.ErrnoException & { stdout?: string; stderr?: string };
-    return {
-      ok: false,
-      stdout: err.stdout?.trim() ?? "",
-      stderr: err.stderr?.trim() || err.message
-    };
-  }
+  return runProcess(command, args, {
+    timeout,
+    env: {
+      ...process.env,
+      ...extraEnv,
+      PATH: pathValue
+    }
+  });
 }
 
 function emitSetupOutput(sender: Electron.WebContents | undefined, output: SetupOutput) {
@@ -154,46 +157,16 @@ function streamRun(
 ): Promise<CommandResult> {
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
   const pathValue = shouldAppendDockerFallback ? `${fallbackDockerBin};${process.env.PATH ?? ""}` : process.env.PATH;
-  const stdout: string[] = [];
-  const stderr: string[] = [];
 
-  emitSetupOutput(sender, { action, stream: "system", text: commandLine(command, args) });
-
-  return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      windowsHide: true,
-      env: {
-        ...process.env,
-        ...extraEnv,
-        PATH: pathValue
-      }
-    });
-    const timer = setTimeout(() => {
-      stderr.push(timeoutMessage(timeout));
-      emitSetupOutput(sender, { action, stream: "stderr", text: stderr[stderr.length - 1] + "\n" });
-      child.kill();
-    }, timeout);
-
-    child.stdout.on("data", (chunk: Buffer) => {
-      const text = chunk.toString();
-      stdout.push(text);
-      emitSetupOutput(sender, { action, stream: "stdout", text });
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-      const text = chunk.toString();
-      stderr.push(text);
-      emitSetupOutput(sender, { action, stream: "stderr", text });
-    });
-    child.on("error", (error) => {
-      const text = error.message;
-      stderr.push(text);
-      emitSetupOutput(sender, { action, stream: "stderr", text: `${text}\n` });
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      emitSetupOutput(sender, { action, stream: "system", text: commandExitMessage(code) });
-      resolve(commandResult(code, stdout, stderr));
-    });
+  return streamProcess(command, args, {
+    action,
+    timeout,
+    env: {
+      ...process.env,
+      ...extraEnv,
+      PATH: pathValue
+    },
+    onOutput: (output) => emitSetupOutput(sender, output)
   });
 }
 
@@ -240,7 +213,7 @@ async function portAvailable(port: number, containerName: string): Promise<Comma
   return occupiedPortResult(port, owner.stdout);
 }
 
-async function startPowerShellScript(scriptName: string, sender?: Electron.WebContents, action = "start-services"): Promise<CommandResult> {
+export async function startPowerShellScript(scriptName: string, sender?: Electron.WebContents, action = "start-services"): Promise<CommandResult> {
   const scriptPath = path.join(appRoot, scriptName);
   if (!existsSync(scriptPath)) {
     return missingScriptResult(scriptPath);
@@ -489,7 +462,8 @@ ipcMain.handle("system:getStatus", async () => {
     config: {
       openHandsModel: config.openHandsModel,
       openWebUiChatModel: config.openWebUiChatModel,
-      openWebUiImage: config.openWebUiImage
+      openWebUiImage: config.openWebUiImage,
+      modelLabels: config.modelLabels
     }
   };
 });

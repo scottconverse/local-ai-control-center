@@ -15,6 +15,7 @@ It gives you one GUI for:
 - Starting and stopping OpenHands.
 - Starting and stopping Open WebUI.
 - Switching configured local models and resetting service data from the GUI.
+- Editable labels and model-name recommendations for custom local model libraries.
 - Checking Docker, Ollama, and service health.
 - Opening the writable agent workspace.
 - Opening the user manual.

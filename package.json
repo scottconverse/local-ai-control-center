@@ -1,6 +1,6 @@
 {
   "name": "local-ai-control-center",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "private": true,
   "description": "A local-first desktop control center for Ollama, OpenHands, and Open WebUI.",
   "main": "dist-electron/electron/main.js",
@@ -13,6 +13,7 @@
     "test:smoke": "tsx scripts/smoke.ts",
     "test:llm": "tsx scripts/llm-smoke.ts",
     "test:runner": "npm run test:unit && npm run test:smoke",
+    "screenshots:packaged": "node scripts/capture-packaged-screenshots.cjs",
     "runner:local": "powershell -ExecutionPolicy Bypass -File run-local-tests.ps1",
     "lint": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "package:win": "npm run build && electron-builder --win portable"
@@ -32,16 +33,17 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.1",
     "@types/node": "^24.10.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
     "@vitest/ui": "^4.0.16",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
     "jsdom": "^27.3.0",
+    "playwright": "^1.60.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",

@@ -124,6 +124,8 @@ The Dashboard shows the configured OpenHands model and Open WebUI image. Open We
 
 You can change the configured OpenHands and Open WebUI chat models from **Dashboard > Model Settings And Reset Controls**. Save the model settings, then restart the affected service so the container launches with the new value. The Dashboard shows a **Restart required** badge until that restart happens. The First Run model pull step uses the saved model choices.
 
+The same panel lets you label installed local models. The Dashboard suggests a plain-language use case from common model-name keywords, such as code, chat, embedding, or vision. For private or uncommon model names, add your own label so the Local Models panel stays readable.
+
 The Dashboard also includes reset controls for OpenHands and Open WebUI. Use these only when you want a clean slate:
 
 | Reset control | What it clears |
