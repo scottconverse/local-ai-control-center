@@ -94,3 +94,11 @@ export function parseOllamaTags(body: string): string[] {
     return [];
   }
 }
+
+export function parseOllamaListNames(output: string): string[] {
+  return output
+    .split("\n")
+    .slice(1)
+    .map((line) => line.trim().split(/\s+/)[0])
+    .filter(Boolean);
+}

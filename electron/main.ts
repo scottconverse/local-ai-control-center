@@ -14,8 +14,10 @@ import {
   minimumFreeVramGb,
   minimumSystemRamGb,
   minimumTotalVramGb,
+  parseOllamaListNames,
   parseOllamaTags
 } from "./setup-logic";
+import { commandExitMessage, commandLine, commandResult, timeoutMessage, type CommandResult, type SetupOutput } from "./stream-logic";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,18 +39,6 @@ const openWebUiChatModel = "gemma4-26b-8k";
 const openWebUiImage = "ghcr.io/open-webui/open-webui:v0.9.5";
 const requiredModels = [openHandsModel, openWebUiChatModel];
 const requiredDockerImages = ["docker.openhands.dev/openhands/openhands:1.7", openWebUiImage];
-
-type CommandResult = {
-  ok: boolean;
-  stdout: string;
-  stderr: string;
-};
-
-type SetupOutput = {
-  action: string;
-  stream: "stdout" | "stderr" | "system";
-  text: string;
-};
 
 async function run(command: string, args: string[], timeout = 120_000): Promise<CommandResult> {
   const shouldAppendDockerFallback = !process.env.DOCKER_EXE && !process.env.DOCKER_PATH && existsSync(fallbackDockerBin);
@@ -93,7 +83,7 @@ function streamRun(
   const stdout: string[] = [];
   const stderr: string[] = [];
 
-  emitSetupOutput(sender, { action, stream: "system", text: `> ${command} ${args.join(" ")}\n` });
+  emitSetupOutput(sender, { action, stream: "system", text: commandLine(command, args) });
 
   return new Promise((resolve) => {
     const child = spawn(command, args, {
@@ -104,7 +94,7 @@ function streamRun(
       }
     });
     const timer = setTimeout(() => {
-      stderr.push(`Timed out after ${Math.round(timeout / 1000)} seconds.`);
+      stderr.push(timeoutMessage(timeout));
       emitSetupOutput(sender, { action, stream: "stderr", text: stderr[stderr.length - 1] + "\n" });
       child.kill();
     }, timeout);
@@ -126,13 +116,8 @@ function streamRun(
     });
     child.on("close", (code) => {
       clearTimeout(timer);
-      const ok = code === 0;
-      emitSetupOutput(sender, { action, stream: "system", text: ok ? "Command completed.\n" : `Command exited with code ${code}.\n` });
-      resolve({
-        ok,
-        stdout: stdout.join("").trim(),
-        stderr: stderr.join("").trim()
-      });
+      emitSetupOutput(sender, { action, stream: "system", text: commandExitMessage(code) });
+      resolve(commandResult(code, stdout, stderr));
     });
   });
 }
@@ -401,7 +386,7 @@ ipcMain.handle("system:getStatus", async () => {
       run(ollamaExe, ["--version"], 20_000)
     ]);
   const apiModels = parseOllamaTags(ollamaTagsResult.text);
-  const modelListOutput = apiModels.length ? `NAME\n${apiModels.join("\n")}` : modelsResult.stdout;
+  const modelNames = apiModels.length ? apiModels : parseOllamaListNames(modelsResult.stdout);
 
   return {
     docker: {
@@ -412,7 +397,8 @@ ipcMain.handle("system:getStatus", async () => {
     },
     ollama: {
       ok: ollamaTagsResult.ok && (modelsResult.ok || apiModels.length > 0),
-      models: modelListOutput,
+      models: modelsResult.stdout,
+      modelNames,
       executable: ollamaExe,
       version: ollamaVersion.stdout || ollamaVersion.stderr,
       message: ollamaTagsResult.ok && (modelsResult.ok || apiModels.length > 0) ? "Ollama is reachable." : "Ollama is not reachable. Start Ollama and confirm it is available on port 11434."
@@ -464,8 +450,8 @@ ipcMain.handle("system:runSetupAction", async (event, action: string) => {
         return { ok: false, stdout: "", stderr: blocked.map((result) => result.stderr).join("\n") };
       }
       const [openHands, openWebUi] = await Promise.all([
-        startPowerShellScript("start-openhands.ps1", sender, action),
-        startPowerShellScript("start-openwebui.ps1", sender, action)
+        startPowerShellScript("start-openhands.ps1", sender, "openhands"),
+        startPowerShellScript("start-openwebui.ps1", sender, "open-webui")
       ]);
       return {
         ok: openHands.ok && openWebUi.ok,

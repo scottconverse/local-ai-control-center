@@ -20,6 +20,15 @@ Docker is resolved in this order:
 
 `DOCKER_EXE` is the definitive override when using a non-standard Docker-compatible runtime.
 
+Ollama is resolved in this order:
+
+1. `OLLAMA_EXE`
+2. `OLLAMA_PATH`
+3. The system `PATH`
+4. The default per-user Ollama install path
+
+`OLLAMA_EXE` is the definitive override when Ollama is installed in a non-standard location.
+
 ## Install
 
 ```powershell

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 - 2026-05-14
+
+- Extracted streaming log formatting and command-result helpers into a testable module.
+- Added stream-logic tests for command formatting, timeout messages, result mapping, capped output, and setup log prefixes.
+- Split setup streaming output from local runner output in the UI.
+- Added per-action labels to streamed setup output, including separate OpenHands and Open WebUI service-start labels.
+- Added typed Ollama `modelNames` status data so the renderer no longer parses a synthetic CLI text table.
+- Documented Ollama executable overrides and background pull behavior when the app closes.
+
 ## 0.3.1 - 2026-05-14
 
 - Added a destroyed-window guard before sending streamed setup output to the renderer.

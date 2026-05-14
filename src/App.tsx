@@ -22,13 +22,14 @@ import {
   XCircle
 } from "lucide-react";
 import type { LocalAIStatus, ServiceName, SetupAction, SetupOutput, SetupStatus } from "./global";
+import { appendCappedOutput, formatSetupOutput } from "../electron/stream-logic";
 import "./styles.css";
 
 type View = "setup" | "dashboard" | "openhands" | "openwebui";
 
 const fallbackStatus: LocalAIStatus = {
   docker: { ok: false, version: "Checking...", executable: "docker.exe", message: "Checking Docker..." },
-  ollama: { ok: false, models: "", executable: "ollama.exe", version: "Checking...", message: "Checking Ollama..." },
+  ollama: { ok: false, models: "", modelNames: [], executable: "ollama.exe", version: "Checking...", message: "Checking Ollama..." },
   services: {
     openHands: { container: "unknown", url: "http://localhost:3000", reachable: false },
     openWebUi: { container: "unknown", url: "http://localhost:8080", reachable: false }
@@ -134,16 +135,11 @@ function App() {
   const [busy, setBusy] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState("Ready.");
   const [operationDetail, setOperationDetail] = useState("");
-  const [testOutput, setTestOutput] = useState("No local runner has been started from this window yet.");
+  const [setupOutput, setSetupOutput] = useState("No setup action has been started from this window yet.");
+  const [runnerOutput, setRunnerOutput] = useState("No local runner has been started from this window yet.");
   const refreshingRef = useRef(false);
 
-  const models = useMemo(() => {
-    return status.ollama.models
-      .split("\n")
-      .slice(1)
-      .map((line) => line.trim().split(/\s+/)[0])
-      .filter(Boolean);
-  }, [status.ollama.models]);
+  const models = useMemo(() => status.ollama.modelNames, [status.ollama.modelNames]);
 
   async function refresh() {
     if (refreshingRef.current) {
@@ -175,10 +171,10 @@ function App() {
     };
     setLastMessage(`${labels[action]}...`);
     setOperationDetail("This setup step can take several minutes. Keep this window open and approve any Windows installer prompts.");
-    setTestOutput("");
+    setSetupOutput("");
     const result = await window.localAI.runSetupAction(action);
     const output = [result.stdout, result.stderr].filter(Boolean).join("\n\n");
-    setTestOutput((current) => {
+    setSetupOutput((current) => {
       const summary = result.ok ? `${labels[action]} complete.` : `${labels[action]} needs attention.`;
       if (current.trim()) {
         return `${current.trim()}\n\n${summary}`;
@@ -215,10 +211,10 @@ function App() {
     const label = command === "runner" ? "local runner" : "local LLM smoke";
     setBusy(`test-${command}`);
     setLastMessage(`Running ${label}...`);
-    setTestOutput(`Running ${label}. This may take a minute.`);
+    setRunnerOutput(`Running ${label}. This may take a minute.`);
     const result = await window.localAI.runTestCommand(command);
     const output = [result.stdout, result.stderr].filter(Boolean).join("\n\n");
-    setTestOutput(output || `${label} finished with no output.`);
+    setRunnerOutput(output || `${label} finished with no output.`);
     setLastMessage(result.ok ? `${label} passed.` : `${label} failed.`);
     setBusy(null);
   }
@@ -236,7 +232,7 @@ function App() {
 
   useEffect(() => {
     function appendSetupOutput(output: SetupOutput) {
-      setTestOutput((current) => `${current}${output.text}`.slice(-40_000));
+      setSetupOutput((current) => appendCappedOutput(current, formatSetupOutput(output)));
     }
 
     return window.localAI.onSetupOutput(appendSetupOutput);
@@ -457,7 +453,7 @@ function App() {
                 </button>
               </div>
               {setupActionRunning && <p className="setup-footnote">Installer and download steps can take a while. Live output streams below while the step runs.</p>}
-              <pre className="test-output">{testOutput}</pre>
+              <pre className="test-output">{setupOutput}</pre>
             </article>
           </section>
         )}
@@ -607,7 +603,7 @@ function App() {
                   Run LLM Smoke
                 </button>
               </div>
-              <pre className="test-output">{testOutput}</pre>
+              <pre className="test-output">{runnerOutput}</pre>
             </article>
           </section>
         )}

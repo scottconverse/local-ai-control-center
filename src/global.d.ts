@@ -16,6 +16,7 @@ export type LocalAIStatus = {
   ollama: {
     ok: boolean;
     models: string;
+    modelNames: string[];
     executable: string;
     version: string;
     message: string;

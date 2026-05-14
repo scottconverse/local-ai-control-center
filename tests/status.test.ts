@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.3.1");
+    expect(packageJson.version).toBe("0.3.2");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -161,9 +161,13 @@ describe("service launcher scripts", () => {
 
     expect(mainProcess).toContain("setup:output");
     expect(mainProcess).toContain("streamRun");
+    expect(mainProcess).toContain("commandResult");
     expect(mainProcess).toContain("sender.isDestroyed()");
+    expect(mainProcess).toContain("startPowerShellScript(\"start-openhands.ps1\", sender, \"openhands\")");
+    expect(mainProcess).toContain("startPowerShellScript(\"start-openwebui.ps1\", sender, \"open-webui\")");
     expect(preload).toContain("onSetupOutput");
     expect(app).toContain("appendSetupOutput");
+    expect(app).toContain("formatSetupOutput");
     expect(app).toContain("Live output streams below while the step runs.");
     expect(globalTypes).toContain("SetupOutput");
   });
@@ -177,5 +181,26 @@ describe("service launcher scripts", () => {
     expect(manual).toContain("Long setup actions stream live output");
     expect(landing).toContain("Live streaming setup logs for installs, model pulls, image pulls, and service starts");
     expect(landing).not.toContain("Streaming progress logs for long model and Docker pulls");
+  });
+
+  it("uses typed Ollama model names instead of renderer text parsing", () => {
+    const mainProcess = read("electron/main.ts");
+    const app = read("src/App.tsx");
+    const globalTypes = read("src/global.d.ts");
+
+    expect(mainProcess).toContain("modelNames");
+    expect(globalTypes).toContain("modelNames: string[]");
+    expect(app).toContain("status.ollama.modelNames");
+    expect(app).not.toContain(".split(\"\\n\")");
+  });
+
+  it("documents Ollama overrides and background pull behavior", () => {
+    const manual = read("USER_MANUAL.md");
+    const developer = read("DEVELOPER.md");
+
+    expect(manual).toContain("Set `OLLAMA_EXE` to your Ollama executable path");
+    expect(manual).toContain("App closed during a model or image pull");
+    expect(developer).toContain("OLLAMA_EXE");
+    expect(developer).toContain("OLLAMA_PATH");
   });
 });

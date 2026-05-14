@@ -84,6 +84,8 @@ The wizard can start these setup actions from the app:
 
 Long setup actions stream live output into the First Run panel while they run. If a model or Docker image takes several minutes to download, leave the app open and watch the log panel for progress.
 
+If you close the app during a model or image pull, the background download may continue. Reopen the app and run the same pull step again to confirm whether it finished.
+
 Docker Desktop may ask for administrator approval or a restart. That is normal on Windows.
 
 ## Choosing The Right Tool
@@ -230,7 +232,9 @@ Use it when:
 | Docker install asks for approval | Approve the Windows installer prompt; Docker Desktop may require a restart |
 | `winget` is not found | Use the official download page the app opens |
 | Docker is not found | Set `DOCKER_EXE` to your Docker-compatible executable path and restart the app |
+| Ollama executable is not found | Set `OLLAMA_EXE` to your Ollama executable path and restart the app |
 | Ollama is not reachable | Start Ollama and confirm it is listening on port `11434` |
+| App closed during a model or image pull | Reopen the app and run the pull step again to confirm whether the background download completed |
 | OpenHands says it is starting | Wait a minute after first launch; Docker may still be starting the container |
 | Open WebUI says it is starting | Wait for the container health check to finish |
 | Models feel slow | Check `nvidia-smi` and stop unused Ollama models |

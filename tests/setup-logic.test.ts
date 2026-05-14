@@ -4,6 +4,7 @@ import {
   gpuHardwareCheck,
   memoryHardwareCheck,
   parseNvidiaSmiCsv,
+  parseOllamaListNames,
   parseOllamaTags
 } from "../electron/setup-logic";
 
@@ -66,5 +67,12 @@ describe("setup hardware logic", () => {
 
   it("treats malformed Ollama tag JSON as an empty model list", () => {
     expect(parseOllamaTags("not-json")).toEqual([]);
+  });
+
+  it("parses Ollama CLI list output only as a fallback", () => {
+    expect(parseOllamaListNames("NAME ID SIZE MODIFIED\ngemma4-26b-8k abc 15 GB today\nopenai/qwen2.5-coder:14b def 9 GB today")).toEqual([
+      "gemma4-26b-8k",
+      "openai/qwen2.5-coder:14b"
+    ]);
   });
 });
