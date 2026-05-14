@@ -172,6 +172,7 @@ export function App() {
   const [configDraft, setConfigDraft] = useState<LocalAIConfig>(fallbackStatus.config);
   const [restartRequired, setRestartRequired] = useState({ openhands: false, openwebui: false });
   const [pendingReset, setPendingReset] = useState<ResetTarget | null>(null);
+  const [modelLabelsExpanded, setModelLabelsExpanded] = useState(false);
   const refreshingRef = useRef(false);
   const userSelectedViewRef = useRef(false);
 
@@ -367,6 +368,7 @@ export function App() {
   const workInProgress = Boolean(busy && busy !== "refresh");
   const servicesReady = openHandsReady && openWebUiReady;
   const setupComplete = setup.ready && servicesReady;
+  const labelEditorExpanded = models.length <= 6 || modelLabelsExpanded;
 
   return (
     <div className="app-shell">
@@ -646,18 +648,29 @@ export function App() {
               </p>
               {models.length > 0 && (
                 <div className="model-label-editor">
-                  <h4>Custom model labels</h4>
-                  {models.map((model) => (
-                    <label key={model}>
-                      <span>{model}</span>
-                      <input
-                        aria-label={`Label for ${model}`}
-                        value={configDraft.modelLabels[model] ?? ""}
-                        placeholder={describeModel(model)}
-                        onChange={(event) => updateModelLabel(model, event.target.value)}
-                      />
-                    </label>
-                  ))}
+                  <div className="model-label-header">
+                    <h4>Custom model labels</h4>
+                    {models.length > 6 && (
+                      <button type="button" onClick={() => setModelLabelsExpanded((current) => !current)}>
+                        {labelEditorExpanded ? "Hide labels" : `Show labels (${models.length})`}
+                      </button>
+                    )}
+                  </div>
+                  {labelEditorExpanded && (
+                    <div className="model-label-scroll">
+                      {models.map((model) => (
+                        <label key={model}>
+                          <span>{model}</span>
+                          <input
+                            aria-label={`Label for ${model}`}
+                            value={configDraft.modelLabels[model] ?? ""}
+                            placeholder={describeModel(model)}
+                            onChange={(event) => updateModelLabel(model, event.target.value)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               <div className="button-row">

@@ -192,6 +192,30 @@ describe("App first-run behavior", () => {
     root.unmount();
   });
 
+  it("collapses the custom label editor for large model libraries", async () => {
+    const manyModels = Array.from({ length: 8 }, (_, index) => `private-model-${index}:latest`);
+    window.localAI.getStatus = vi.fn().mockResolvedValue({
+      ...readyStatus,
+      ollama: { ...readyStatus.ollama, modelNames: manyModels },
+      config: { ...readyStatus.config, modelLabels: {} }
+    });
+    const { container, root } = renderApp();
+    await mount(root);
+
+    await act(async () => {
+      clickButton(container, "Dashboard");
+    });
+    expect(container.textContent).toContain("Show labels (8)");
+    expect(container.querySelector('input[aria-label="Label for private-model-0:latest"]')).toBeNull();
+
+    await act(async () => {
+      clickButton(container, "Show labels");
+    });
+    expect(container.querySelector('input[aria-label="Label for private-model-0:latest"]')).toBeTruthy();
+
+    root.unmount();
+  });
+
   it("does not reset service data when the in-app confirmation is cancelled", async () => {
     const { container, root } = renderApp();
     await mount(root);

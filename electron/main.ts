@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
+import { defaultConfig, mergeConfigUpdate, parseConfig, type LocalAIConfig } from "./config-logic";
 import {
   occupiedPortResult,
   portCheckFailure,
@@ -45,16 +46,8 @@ const workspaceDir = path.join(appRoot, "agent-workspace");
 const openHandsUrl = "http://localhost:3000";
 const openWebUiUrl = "http://localhost:8080";
 const ollamaApiUrl = "http://127.0.0.1:11434";
-const defaultConfig = {
-  openHandsModel: "openai/qwen2.5-coder:14b",
-  openWebUiChatModel: "gemma4-26b-8k",
-  openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5",
-  modelLabels: {} as Record<string, string>
-};
 const openHandsImage = "docker.openhands.dev/openhands/openhands:1.7";
 const setupStateVersion = 1;
-
-type LocalAIConfig = typeof defaultConfig;
 
 function configPath() {
   return path.join(app.getPath("userData"), "config.json");
@@ -62,19 +55,7 @@ function configPath() {
 
 async function readConfig(): Promise<LocalAIConfig> {
   try {
-    const parsed = JSON.parse(await fs.readFile(configPath(), "utf8")) as Partial<LocalAIConfig>;
-    const stringConfig = Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
-    );
-    const modelLabels =
-      parsed.modelLabels && typeof parsed.modelLabels === "object"
-        ? Object.fromEntries(Object.entries(parsed.modelLabels).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0))
-        : {};
-    return {
-      ...defaultConfig,
-      ...stringConfig,
-      modelLabels
-    };
+    return parseConfig(await fs.readFile(configPath(), "utf8"));
   } catch {
     return defaultConfig;
   }
@@ -82,18 +63,7 @@ async function readConfig(): Promise<LocalAIConfig> {
 
 async function writeConfig(update: Partial<LocalAIConfig>): Promise<LocalAIConfig> {
   const current = await readConfig();
-  const stringConfig = Object.fromEntries(
-    Object.entries(update).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
-  );
-  const modelLabels =
-    update.modelLabels && typeof update.modelLabels === "object"
-      ? Object.fromEntries(Object.entries(update.modelLabels).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0))
-      : current.modelLabels;
-  const next = {
-    ...current,
-    ...stringConfig,
-    modelLabels
-  };
+  const next = mergeConfigUpdate(current, update);
   await fs.mkdir(path.dirname(configPath()), { recursive: true });
   await fs.writeFile(configPath(), JSON.stringify(next, null, 2), "utf8");
   return next;

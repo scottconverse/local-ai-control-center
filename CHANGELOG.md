@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 - 2026-05-14
+
+- Added focused config-logic tests for custom model-label parsing, blank-label cleanup, and label preservation during model-only saves.
+- Collapsed the custom model-label editor for large Ollama libraries and added a scroll-bounded expanded state.
+- Documented where custom model labels are stored when troubleshooting missing labels after moving machines or profiles.
+
 ## 0.5.0 - 2026-05-14
 
 - Added editable model labels so private or uncommon Ollama model names can have user-friendly Dashboard descriptions.

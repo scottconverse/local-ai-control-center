@@ -599,12 +599,31 @@ dd {
   border: 1px solid #ded8ce;
 }
 
-.model-label-editor h4 {
+.model-label-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.model-label-header h4 {
   margin: 0;
   font-size: 14px;
 }
 
-.model-label-editor label {
+.model-label-header button {
+  min-height: 32px;
+}
+
+.model-label-scroll {
+  display: grid;
+  gap: 10px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.model-label-scroll label {
   display: grid;
   grid-template-columns: minmax(170px, 0.42fr) minmax(0, 1fr);
   gap: 12px;
@@ -613,7 +632,7 @@ dd {
   font-weight: 750;
 }
 
-.model-label-editor input {
+.model-label-scroll input {
   min-height: 36px;
   border: 1px solid #c9c4ba;
   border-radius: 8px;

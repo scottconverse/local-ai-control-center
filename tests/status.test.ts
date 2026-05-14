@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.5.0");
+    expect(packageJson.version).toBe("0.5.1");
   });
 
   it("uses relative production assets so the packaged app is not blank", () => {
@@ -262,6 +262,8 @@ describe("service launcher scripts", () => {
     expect(app).toContain("Model Settings And Reset Controls");
     expect(app).toContain("Custom model labels");
     expect(app).toContain("Recommendations are guessed from model names");
+    expect(app).toContain("Show labels");
+    expect(app).toContain("model-label-scroll");
     expect(preload).toContain("updateConfig");
     expect(preload).toContain("resetServiceData");
     expect(openHandsScript).toContain("$openHandsModel");
@@ -282,6 +284,7 @@ describe("service launcher scripts", () => {
     expect(landing).not.toContain("Next hardening pass");
     expect(readme).toContain("Editable labels and model-name recommendations");
     expect(manual).toContain("label installed local models");
+    expect(manual).toContain("Custom model labels disappeared");
     expect(developer).toContain("npm run screenshots:packaged");
   });
 

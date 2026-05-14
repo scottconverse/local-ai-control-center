@@ -251,6 +251,7 @@ Use it when:
 | Ollama is not reachable | Start Ollama and confirm it is listening on port `11434` |
 | App cannot find its scripts after a non-standard install | Set `LOCAL_AI_APP_ROOT` to the app root directory and restart the app |
 | App closed during a model or image pull | Reopen the app and run the pull step again to confirm whether the background download completed |
+| Custom model labels disappeared | Labels are stored in the app's Windows user data folder. They are not part of the portable `.exe` and will not transfer to a new machine or Windows profile automatically |
 | OpenHands says it is starting | Wait a minute after first launch; Docker may still be starting the container |
 | Open WebUI says it is starting | Wait for the container health check to finish |
 | Models feel slow | Check `nvidia-smi` and stop unused Ollama models |
