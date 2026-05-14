@@ -213,7 +213,48 @@ describe("App first-run behavior", () => {
     });
     expect(container.querySelector('input[aria-label="Label for private-model-0:latest"]')).toBeTruthy();
 
+    await act(async () => {
+      clickButton(container, "Hide labels");
+    });
+    expect(container.querySelector('input[aria-label="Label for private-model-0:latest"]')).toBeNull();
+
     root.unmount();
+  });
+
+  it("refreshes overwrite unsaved custom label edits with saved config", async () => {
+    vi.useFakeTimers();
+    const statusWithPrivateModel = (): LocalAIStatus => ({
+      ...readyStatus,
+      ollama: { ...readyStatus.ollama, modelNames: ["private-model:latest"] },
+      config: { ...readyStatus.config, modelLabels: { "private-model:latest": "Saved label" } }
+    });
+    window.localAI.getStatus = vi.fn().mockImplementation(async () => statusWithPrivateModel());
+    const { container, root } = renderApp();
+    try {
+      await mount(root);
+
+      await act(async () => {
+        clickButton(container, "Dashboard");
+      });
+      const labelInput = container.querySelector('input[aria-label="Label for private-model:latest"]') as HTMLInputElement | null;
+      expect(labelInput?.value).toBe("Saved label");
+      await act(async () => {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        setter?.call(labelInput, "Unsaved label");
+        labelInput!.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      expect(labelInput?.value).toBe("Unsaved label");
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30_000);
+      });
+
+      expect(labelInput?.value).toBe("Saved label");
+
+      root.unmount();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not reset service data when the in-app confirmation is cancelled", async () => {

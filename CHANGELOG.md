@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 - 2026-05-14
+
+- Added React coverage for both directions of the custom label editor show/hide toggle.
+- Documented the current refresh behavior in tests: unsaved custom label edits are replaced by saved config on status refresh.
+
 ## 0.5.1 - 2026-05-14
 
 - Added focused config-logic tests for custom model-label parsing, blank-label cleanup, and label preservation during model-only saves.

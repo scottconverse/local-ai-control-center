@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.5.1");
+    expect(packageJson.version).toBe("0.5.2");
   });
 
   it("uses relative production assets so the packaged app is not blank", () => {
