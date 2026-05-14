@@ -39,6 +39,41 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.1.1");
+    expect(packageJson.version).toBe("0.1.2");
+  });
+
+  it("keeps the landing page status current with shipped hardening work", () => {
+    const landing = read("landing/index.html");
+    expect(landing).toContain("Docker command discovery and pinned Open WebUI image");
+    expect(landing).not.toContain("Docker binary discovery instead of fixed install-path assumptions");
+    expect(landing).not.toContain("Meaningful unit tests replacing placeholder coverage");
+  });
+
+  it("splits unit/build checks from service smoke checks", () => {
+    const packageJson = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
+    expect(packageJson.scripts["test:unit"]).toBe("npm run lint && npm test && npm run build");
+    expect(packageJson.scripts["test:runner"]).toBe("npm run test:unit && npm run test:smoke");
+  });
+
+  it("does not leak internal project-state notes into the user manual", () => {
+    const manual = read("USER_MANUAL.md");
+    expect(manual).not.toContain("GitHub Actions is disabled");
+    expect(manual).not.toContain("If you want, the next upgrade");
+  });
+
+  it("constrains new windows opened from embedded content", () => {
+    const mainProcess = read("electron/main.ts");
+    expect(mainProcess).toContain("setWindowOpenHandler");
+    expect(mainProcess).toContain("Unsupported external target");
+  });
+
+  it("surfaces configured model and image values through status", () => {
+    const mainProcess = read("electron/main.ts");
+    const app = read("src/App.tsx");
+
+    expect(mainProcess).toContain("openHandsModel");
+    expect(mainProcess).toContain("openWebUiImage");
+    expect(app).toContain("status.config.openHandsModel");
+    expect(app).toContain("status.config.openWebUiImage");
   });
 });

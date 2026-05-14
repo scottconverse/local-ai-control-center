@@ -4,10 +4,15 @@ export type LocalAIStatus = {
   docker: {
     ok: boolean;
     version: string;
+    executable: string;
+    message: string;
   };
   ollama: {
     ok: boolean;
     models: string;
+    executable: string;
+    version: string;
+    message: string;
   };
   services: {
     openHands: {
@@ -24,6 +29,11 @@ export type LocalAIStatus = {
   paths: {
     appRoot: string;
     workspaceDir: string;
+  };
+  config: {
+    openHandsModel: string;
+    openWebUiChatModel: string;
+    openWebUiImage: string;
   };
 };
 

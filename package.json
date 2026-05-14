@@ -1,6 +1,6 @@
 {
   "name": "local-ai-control-center",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "A local-first desktop control center for Ollama, OpenHands, and Open WebUI.",
   "main": "dist-electron/main.js",
@@ -9,9 +9,10 @@
     "build": "tsc && vite build && tsc -p tsconfig.electron.json",
     "start": "electron .",
     "test": "vitest run",
+    "test:unit": "npm run lint && npm test && npm run build",
     "test:smoke": "tsx scripts/smoke.ts",
     "test:llm": "tsx scripts/llm-smoke.ts",
-    "test:runner": "npm run lint && npm test && npm run build && npm run test:smoke",
+    "test:runner": "npm run test:unit && npm run test:smoke",
     "runner:local": "powershell -ExecutionPolicy Bypass -File run-local-tests.ps1",
     "lint": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "package:win": "npm run build && electron-builder --win portable"
@@ -61,6 +62,11 @@
       "package.json",
       "README.md",
       "USER_MANUAL.md",
+      "RUNNER.md",
+      "DEVELOPER.md",
+      "CONTRIBUTING.md",
+      "CHANGELOG.md",
+      "landing/**/*",
       "agent-workspace/.gitkeep"
     ],
     "win": {

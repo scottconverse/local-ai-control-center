@@ -35,6 +35,18 @@ That includes:
 - Production build.
 - Local service smoke checks for Ollama, OpenHands, and Open WebUI.
 
+If you only want checks that do not require services to be running, use:
+
+```powershell
+npm run test:unit
+```
+
+If you only want environment/service checks, use:
+
+```powershell
+npm run test:smoke
+```
+
 ## Optional LLM Smoke
 
 Run:

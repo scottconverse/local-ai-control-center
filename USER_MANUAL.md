@@ -199,13 +199,9 @@ Practical options:
 
 - Paste web content into Open WebUI or OpenHands.
 - Ask OpenHands to use command-line tools if the sandbox has network access.
-- Add a search provider later, such as SearXNG, Tavily, Brave Search, or Open WebUI web search configuration.
+- Configure a web search provider in Open WebUI if you need model-assisted browsing.
 
-If you want, the next upgrade should be adding a local SearXNG container and wiring Open WebUI to it for web search.
-
-## Common Commands
-
-You do not need these commands for normal use. They are here for troubleshooting and development.
+## Helpful Files
 
 Start the desktop app:
 
@@ -268,11 +264,9 @@ Check GPU usage:
 nvidia-smi
 ```
 
-## Development And Testing
+## Local Runner
 
-This project is now a Git-ready product repo.
-
-GitHub Actions is disabled while the account is out of Actions minutes. Use the local runner first.
+The local runner is the main verification path for this project.
 
 Double-click:
 
@@ -281,30 +275,6 @@ Run Local Test Runner.vbs
 ```
 
 The runner opens the latest log in Notepad when it finishes.
-
-Install dependencies:
-
-```powershell
-npm install
-```
-
-Run the desktop app:
-
-```powershell
-npm run dev
-```
-
-Run the main test runner:
-
-```powershell
-npm run test:runner
-```
-
-Run the optional local model smoke test:
-
-```powershell
-npm run test:llm
-```
 
 Unload a model from VRAM:
 
@@ -359,8 +329,23 @@ Expected result: a JSON list of local Ollama models.
 ```text
 README.md
 USER_MANUAL.md
+RUNNER.md
+DEVELOPER.md
+CONTRIBUTING.md
+CHANGELOG.md
+Launch Local AI Control Center.vbs
+Start Local AI Control Center.cmd
+Install Local AI Control Center.cmd
+Run Local Test Runner.vbs
+Run Local Test Runner.cmd
 start-openhands.ps1
 start-openwebui.ps1
+run-local-tests.ps1
+electron\
+src\
+scripts\
+tests\
+landing\
 agent-workspace
 ```
 

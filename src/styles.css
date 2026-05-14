@@ -128,6 +128,7 @@ nav button.active {
 }
 
 main {
+  position: relative;
   min-width: 0;
   display: grid;
   grid-template-rows: 78px 1fr;
@@ -158,8 +159,28 @@ main {
   min-width: 116px;
 }
 
-.dashboard,
-.manual-view {
+.notice {
+  position: absolute;
+  z-index: 10;
+  top: 78px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 10px 26px;
+  background: #fff2d8;
+  border-bottom: 1px solid #e5c58f;
+  color: #6f4812;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.notice.error {
+  background: #ffe6e2;
+  border-bottom-color: #eca196;
+  color: #822a1e;
+}
+
+.dashboard {
   padding: 24px;
   overflow: auto;
 }
@@ -218,14 +239,12 @@ main {
   margin-bottom: 18px;
 }
 
-.panel-title h3,
-.manual-panel h3 {
+.panel-title h3 {
   margin: 0;
   font-size: 19px;
 }
 
-.panel-title p,
-.manual-panel p {
+.panel-title p {
   margin: 4px 0 0;
   color: #736a5f;
   line-height: 1.5;
@@ -324,15 +343,6 @@ dd {
 
 .empty-frame p {
   margin: 0 0 10px;
-}
-
-.manual-view {
-  display: grid;
-  place-items: center;
-}
-
-.manual-panel {
-  max-width: 680px;
 }
 
 .spin {

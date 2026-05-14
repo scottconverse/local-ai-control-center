@@ -122,6 +122,12 @@ http://localhost:8080
 
 ## Development
 
+Developer setup, packaging, and maintainer commands live in:
+
+```text
+DEVELOPER.md
+```
+
 Install dependencies:
 
 ```powershell
@@ -140,6 +146,12 @@ Run the test runner:
 npm run test:runner
 ```
 
+Run build/unit checks without requiring local services:
+
+```powershell
+npm run test:unit
+```
+
 Optional local LLM smoke test:
 
 ```powershell
@@ -148,7 +160,7 @@ npm run test:llm
 
 ## Local Runner
 
-GitHub Actions is disabled while the account is out of Actions minutes.
+Use the local runner before publishing or packaging changes.
 
 Use the local runner first:
 

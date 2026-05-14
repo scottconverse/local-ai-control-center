@@ -29,9 +29,15 @@ if (-not (Test-Path -LiteralPath (Join-Path $root "node_modules"))) {
   }
 }
 
-Write-Log "Running npm run test:runner."
-npm.cmd run test:runner *>&1 | Tee-Object -FilePath $log -Append
+Write-Log "Running npm run test:unit."
+npm.cmd run test:unit *>&1 | Tee-Object -FilePath $log -Append
 $runnerExit = $LASTEXITCODE
+
+if ($runnerExit -eq 0) {
+  Write-Log "Running npm run test:smoke."
+  npm.cmd run test:smoke *>&1 | Tee-Object -FilePath $log -Append
+  $runnerExit = $LASTEXITCODE
+}
 
 if ($runnerExit -eq 0) {
   Write-Log "Local runner passed."

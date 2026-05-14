@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import {
   Activity,
   Bot,
-  BookOpen,
   Boxes,
   CheckCircle2,
   ExternalLink,
@@ -21,11 +20,11 @@ import {
 import type { LocalAIStatus, ServiceName } from "./global";
 import "./styles.css";
 
-type View = "dashboard" | "openhands" | "openwebui" | "manual";
+type View = "dashboard" | "openhands" | "openwebui";
 
 const fallbackStatus: LocalAIStatus = {
-  docker: { ok: false, version: "Checking..." },
-  ollama: { ok: false, models: "" },
+  docker: { ok: false, version: "Checking...", executable: "docker.exe", message: "Checking Docker..." },
+  ollama: { ok: false, models: "", executable: "ollama.exe", version: "Checking...", message: "Checking Ollama..." },
   services: {
     openHands: { container: "unknown", url: "http://localhost:3000", reachable: false },
     openWebUi: { container: "unknown", url: "http://localhost:8080", reachable: false }
@@ -33,6 +32,11 @@ const fallbackStatus: LocalAIStatus = {
   paths: {
     appRoot: "",
     workspaceDir: ""
+  },
+  config: {
+    openHandsModel: "openai/qwen2.5-coder:14b",
+    openWebUiChatModel: "gemma4-26b-8k",
+    openWebUiImage: "ghcr.io/open-webui/open-webui:v0.9.5"
   }
 };
 
@@ -45,12 +49,16 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-function EmptyWebFrame({ title, url }: { title: string; url: string }) {
+function EmptyWebFrame({ title, url, starting }: { title: string; url: string; starting: boolean }) {
   return (
     <div className="empty-frame">
-      <Globe size={38} />
-      <h2>{title}</h2>
-      <p>Open this local interface in your browser if the embedded view is still starting.</p>
+      {starting ? <Loader2 className="spin" size={38} /> : <Globe size={38} />}
+      <h2>{starting ? `${title} is starting` : title}</h2>
+      <p>
+        {starting
+          ? "The container is running but the web interface is not ready yet. This can take a minute after first launch."
+          : "Open this local interface in your browser if the embedded view is still starting."}
+      </p>
       <button className="primary" onClick={() => window.open(url, "_blank")}>
         <ExternalLink size={18} />
         Open {title}
@@ -64,6 +72,7 @@ function App() {
   const [status, setStatus] = useState<LocalAIStatus>(fallbackStatus);
   const [busy, setBusy] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState("Ready.");
+  const [operationDetail, setOperationDetail] = useState("");
   const [testOutput, setTestOutput] = useState("No local runner has been started from this window yet.");
 
   const models = useMemo(() => {
@@ -91,8 +100,10 @@ function App() {
     setBusy(`start-${service}`);
     const label = service === "openhands" ? "OpenHands" : "Open WebUI";
     setLastMessage(`Starting ${label}...`);
+    setOperationDetail("First launch may pull Docker images and can take several minutes. Keep this window open.");
     const result = await window.localAI.startService(service);
     setLastMessage(result.ok ? `${label} started.` : result.stderr || `Could not start ${label}.`);
+    setOperationDetail(result.ok ? "" : "Check Docker Desktop, port availability, and the service logs if this repeats.");
     await refresh();
   }
 
@@ -100,6 +111,7 @@ function App() {
     setBusy(`stop-${service}`);
     const label = service === "openhands" ? "OpenHands" : "Open WebUI";
     setLastMessage(`Stopping ${label}...`);
+    setOperationDetail("");
     const result = await window.localAI.stopService(service);
     setLastMessage(result.ok ? `${label} stopped.` : result.stderr || `Could not stop ${label}.`);
     await refresh();
@@ -125,6 +137,11 @@ function App() {
 
   const openHandsReady = status.services.openHands.reachable;
   const openWebUiReady = status.services.openWebUi.reachable;
+  const prerequisiteMessage = !status.docker.ok
+    ? status.docker.message
+    : !status.ollama.ok
+      ? status.ollama.message
+      : "";
 
   return (
     <div className="app-shell">
@@ -152,10 +169,6 @@ function App() {
             <MessageSquare size={19} />
             Open WebUI
           </button>
-          <button className={view === "manual" ? "active" : ""} onClick={() => setView("manual")}>
-            <BookOpen size={19} />
-            Manual
-          </button>
         </nav>
 
         <div className="sidebar-actions">
@@ -177,7 +190,6 @@ function App() {
               {view === "dashboard" && "Dashboard"}
               {view === "openhands" && "OpenHands Agent"}
               {view === "openwebui" && "Open WebUI Chat"}
-              {view === "manual" && "Manual"}
             </h2>
             <p>{lastMessage}</p>
           </div>
@@ -186,6 +198,12 @@ function App() {
             Refresh
           </button>
         </header>
+
+        {(busy?.startsWith("start-") || operationDetail || prerequisiteMessage) && (
+          <div className={`notice ${!status.docker.ok || !status.ollama.ok ? "error" : ""}`}>
+            {operationDetail || prerequisiteMessage}
+          </div>
+        )}
 
         {view === "dashboard" && (
           <section className="dashboard">
@@ -209,7 +227,7 @@ function App() {
                   <dt>Status</dt>
                   <dd>{status.services.openHands.container}</dd>
                   <dt>Model</dt>
-                  <dd>openai/qwen2.5-coder:14b</dd>
+                  <dd>{status.config.openHandsModel}</dd>
                   <dt>Workspace</dt>
                   <dd>{status.paths.workspaceDir || "agent-workspace"}</dd>
                 </dl>
@@ -241,9 +259,9 @@ function App() {
                   <dt>Status</dt>
                   <dd>{status.services.openWebUi.container}</dd>
                   <dt>Default chat model</dt>
-                  <dd>gemma4-26b-8k</dd>
-                  <dt>Local URL</dt>
-                  <dd>{status.services.openWebUi.url}</dd>
+                  <dd>{status.config.openWebUiChatModel}</dd>
+                  <dt>Image</dt>
+                  <dd>{status.config.openWebUiImage}</dd>
                 </dl>
                 <div className="button-row">
                   <button className="primary" onClick={() => start("openwebui")} disabled={!!busy}>
@@ -294,6 +312,26 @@ function App() {
               </article>
             </div>
 
+            <article className="panel">
+              <div className="panel-title">
+                <CheckCircle2 size={22} />
+                <div>
+                  <h3>Prerequisites</h3>
+                  <p>What the app can currently resolve on this machine.</p>
+                </div>
+              </div>
+              <dl>
+                <dt>Docker</dt>
+                <dd>{status.docker.message}</dd>
+                <dt>Docker exe</dt>
+                <dd>{status.docker.executable}</dd>
+                <dt>Ollama</dt>
+                <dd>{status.ollama.message}</dd>
+                <dt>Ollama exe</dt>
+                <dd>{status.ollama.executable}</dd>
+              </dl>
+            </article>
+
             <article className="panel runner-panel">
               <div className="panel-title">
                 <CheckCircle2 size={22} />
@@ -322,7 +360,11 @@ function App() {
             {openHandsReady ? (
               <webview className="webview" src={status.services.openHands.url} />
             ) : (
-              <EmptyWebFrame title="OpenHands" url={status.services.openHands.url} />
+              <EmptyWebFrame
+                title="OpenHands"
+                url={status.services.openHands.url}
+                starting={status.services.openHands.container === "running"}
+              />
             )}
           </section>
         )}
@@ -332,31 +374,12 @@ function App() {
             {openWebUiReady ? (
               <webview className="webview" src={status.services.openWebUi.url} />
             ) : (
-              <EmptyWebFrame title="Open WebUI" url={status.services.openWebUi.url} />
+              <EmptyWebFrame
+                title="Open WebUI"
+                url={status.services.openWebUi.url}
+                starting={status.services.openWebUi.container === "running"}
+              />
             )}
-          </section>
-        )}
-
-        {view === "manual" && (
-          <section className="manual-view">
-            <article className="panel manual-panel">
-              <BookOpen size={34} />
-              <h3>How to use this setup</h3>
-              <p>
-                The full manual is stored beside the app so it can be opened, edited, and committed with the
-                project. It covers first run, workspace rules, model choices, troubleshooting, and safe usage.
-              </p>
-              <div className="button-row">
-                <button className="primary" onClick={() => window.localAI.openExternal("manual")}>
-                  <ExternalLink size={18} />
-                  Open Manual
-                </button>
-                <button onClick={() => window.localAI.openExternal("workspace")}>
-                  <FolderOpen size={18} />
-                  Open Workspace
-                </button>
-              </div>
-            </article>
           </section>
         )}
       </main>
