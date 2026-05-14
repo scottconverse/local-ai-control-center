@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -135,6 +135,7 @@ function App() {
   const [lastMessage, setLastMessage] = useState("Ready.");
   const [operationDetail, setOperationDetail] = useState("");
   const [testOutput, setTestOutput] = useState("No local runner has been started from this window yet.");
+  const refreshingRef = useRef(false);
 
   const models = useMemo(() => {
     return status.ollama.models
@@ -145,6 +146,10 @@ function App() {
   }, [status.ollama.models]);
 
   async function refresh() {
+    if (refreshingRef.current) {
+      return;
+    }
+    refreshingRef.current = true;
     setBusy("refresh");
     try {
       const [nextStatus, nextSetup] = await Promise.all([window.localAI.getStatus(), window.localAI.getSetupStatus()]);
@@ -154,6 +159,7 @@ function App() {
     } catch (error) {
       setLastMessage(error instanceof Error ? error.message : "Could not refresh status.");
     } finally {
+      refreshingRef.current = false;
       setBusy(null);
     }
   }

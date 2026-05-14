@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-05-14
+
+- Added more behavioral tests for setup edge cases: multi-GPU selection, missing `nvidia-smi`, and malformed Ollama tags JSON.
+- Added an inflight guard so scheduled status polling cannot stack overlapping refresh requests.
+- Added the dashboard screenshot to the README for GitHub visitors.
+- Narrowed the landing-page next-pass visual item to the remaining First Run screenshot and install-flow diagram work.
+
 ## 0.2.1 - 2026-05-14
 
 - Added behavioral tests for setup hardware parsing, VRAM thresholds, memory/disk gates, and Ollama tag parsing.

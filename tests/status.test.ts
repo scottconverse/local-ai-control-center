@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.2.1");
+    expect(packageJson.version).toBe("0.2.2");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -122,10 +122,12 @@ describe("service launcher scripts", () => {
     const landing = read("landing/index.html");
 
     expect(readme).toContain("NVIDIA GPU with roughly 16 GB VRAM available");
+    expect(readme).toContain("![Local AI Control Center dashboard]");
     expect(manual).toContain("## First Run Setup");
     expect(manual).toContain("| GPU / VRAM |");
     expect(landing).toContain("First-run setup wizard with hardware and VRAM checks");
     expect(landing).toContain("Port-conflict preflight before service starts");
+    expect(landing).toContain("First Run screenshot and install-flow diagrams");
     expect(landing).not.toContain("Prerequisite setup flow for non-developer users");
     expect(landing).not.toContain("Port-conflict detection before service start");
   });

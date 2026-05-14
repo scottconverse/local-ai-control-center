@@ -33,6 +33,21 @@ describe("setup hardware logic", () => {
     expect(check.detail).toContain("Close other GPU apps");
   });
 
+  it("selects the strongest GPU when multiple NVIDIA GPUs are present", () => {
+    const check = gpuHardwareCheck("NVIDIA RTX 3060, 12288, 11000\nNVIDIA RTX 5090, 32768, 31000", true);
+
+    expect(check.ok).toBe(true);
+    expect(check.value).toBe("NVIDIA RTX 5090");
+  });
+
+  it("fails clearly when nvidia-smi is unavailable", () => {
+    const check = gpuHardwareCheck("", false);
+
+    expect(check.ok).toBe(false);
+    expect(check.value).toBe("Not detected");
+    expect(check.detail).toContain("nvidia-smi");
+  });
+
   it("fails machines below the memory and disk gates", () => {
     expect(memoryHardwareCheck(16, 8, true).ok).toBe(false);
     expect(diskHardwareCheck(40, 512, "C:", true).ok).toBe(false);
@@ -42,5 +57,9 @@ describe("setup hardware logic", () => {
     const tags = parseOllamaTags(JSON.stringify({ models: [{ name: "gemma4-26b-8k" }, { name: "openai/qwen2.5-coder:14b" }] }));
 
     expect(tags).toEqual(["gemma4-26b-8k", "openai/qwen2.5-coder:14b"]);
+  });
+
+  it("treats malformed Ollama tag JSON as an empty model list", () => {
+    expect(parseOllamaTags("not-json")).toEqual([]);
   });
 });

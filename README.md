@@ -17,6 +17,8 @@ It gives you one GUI for:
 - Opening the user manual.
 - Embedding the OpenHands and Open WebUI interfaces in one place.
 
+![Local AI Control Center dashboard](landing/assets/control-center-dashboard.png)
+
 ## Start The App
 
 Download the latest portable Windows release, then open the app. On first launch, start with the **First Run** tab.
