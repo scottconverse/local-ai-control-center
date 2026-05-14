@@ -300,6 +300,9 @@ export function App() {
     const result = await window.localAI.resetServiceData(target);
     setLastMessage(result.ok ? `${label} data reset.` : result.stderr || `${label} reset needs attention.`);
     setOperationDetail(result.ok ? "" : "Close the service, make sure Docker Desktop is running, then try the reset again.");
+    if (result.ok) {
+      setRestartRequired((current) => ({ ...current, [target]: false }));
+    }
     await refresh("operation");
     setBusy(null);
   }

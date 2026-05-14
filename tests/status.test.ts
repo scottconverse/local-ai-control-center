@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.4.1");
+    expect(packageJson.version).toBe("0.4.2");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -215,6 +215,8 @@ describe("service launcher scripts", () => {
     const developer = read("DEVELOPER.md");
 
     expect(manual).toContain("Set `OLLAMA_EXE` to your Ollama executable path");
+    expect(manual).toContain("Set `LOCAL_AI_APP_ROOT` to the app root directory");
+    expect(manual).toContain("The Dashboard shows a **Restart required** badge");
     expect(manual).toContain("App closed during a model or image pull");
     expect(developer).toContain("OLLAMA_EXE");
     expect(developer).toContain("OLLAMA_PATH");

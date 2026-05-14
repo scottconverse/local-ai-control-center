@@ -177,4 +177,35 @@ describe("App first-run behavior", () => {
 
     root.unmount();
   });
+
+  it("clears restart-required state after a successful reset", async () => {
+    const { container, root } = renderApp();
+    await mount(root);
+
+    await act(async () => {
+      clickButton(container, "Dashboard");
+    });
+    const openHandsInput = Array.from(container.querySelectorAll("input")).find((input) => input.value.includes("qwen"));
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(openHandsInput, "new-code-model:latest");
+      openHandsInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      clickButton(container, "Save Model Settings");
+    });
+    expect(container.textContent).toContain("Restart required");
+
+    await act(async () => {
+      clickButton(container, "Reset OpenHands Data");
+    });
+    await act(async () => {
+      clickButton(container, "Reset data");
+    });
+
+    expect(window.localAI.resetServiceData).toHaveBeenCalledWith("openhands");
+    expect(container.textContent).not.toContain("Restart required");
+
+    root.unmount();
+  });
 });

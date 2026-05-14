@@ -122,7 +122,7 @@ Good Open WebUI requests:
 
 The Dashboard shows the configured OpenHands model and Open WebUI image. Open WebUI can also use other local Ollama models, such as `gpt-oss:20b`, if they are installed.
 
-You can change the configured OpenHands and Open WebUI chat models from **Dashboard > Model Settings And Reset Controls**. Save the model settings, then restart the affected service so the container launches with the new value. The First Run model pull step uses the saved model choices.
+You can change the configured OpenHands and Open WebUI chat models from **Dashboard > Model Settings And Reset Controls**. Save the model settings, then restart the affected service so the container launches with the new value. The Dashboard shows a **Restart required** badge until that restart happens. The First Run model pull step uses the saved model choices.
 
 The Dashboard also includes reset controls for OpenHands and Open WebUI. Use these only when you want a clean slate:
 
@@ -247,6 +247,7 @@ Use it when:
 | Docker is not found | Set `DOCKER_EXE` to your Docker-compatible executable path and restart the app |
 | Ollama executable is not found | Set `OLLAMA_EXE` to your Ollama executable path and restart the app |
 | Ollama is not reachable | Start Ollama and confirm it is listening on port `11434` |
+| App cannot find its scripts after a non-standard install | Set `LOCAL_AI_APP_ROOT` to the app root directory and restart the app |
 | App closed during a model or image pull | Reopen the app and run the pull step again to confirm whether the background download completed |
 | OpenHands says it is starting | Wait a minute after first launch; Docker may still be starting the container |
 | Open WebUI says it is starting | Wait for the container health check to finish |

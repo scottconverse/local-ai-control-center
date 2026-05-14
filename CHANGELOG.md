@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2 - 2026-05-14
+
+- Cleared restart-required badges after a successful service data reset.
+- Split IPC, app-root, and setup-state helper tests into focused files and added missing fallback/state edge coverage.
+- Documented `LOCAL_AI_APP_ROOT` troubleshooting and the model-settings restart requirement in the user manual.
+
 ## 0.4.1 - 2026-05-14
 
 - Added restart-required indicators after model setting changes until affected services are restarted.
