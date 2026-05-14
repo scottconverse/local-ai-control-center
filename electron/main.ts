@@ -75,7 +75,10 @@ async function run(command: string, args: string[], timeout = 120_000): Promise<
 }
 
 function emitSetupOutput(sender: Electron.WebContents | undefined, output: SetupOutput) {
-  sender?.send("setup:output", output);
+  if (!sender || sender.isDestroyed()) {
+    return;
+  }
+  sender.send("setup:output", output);
 }
 
 function streamRun(

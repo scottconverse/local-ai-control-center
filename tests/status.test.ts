@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the patch release version for the safety fix", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.3.0");
+    expect(packageJson.version).toBe("0.3.1");
   });
 
   it("keeps the landing page status current with shipped hardening work", () => {
@@ -161,6 +161,7 @@ describe("service launcher scripts", () => {
 
     expect(mainProcess).toContain("setup:output");
     expect(mainProcess).toContain("streamRun");
+    expect(mainProcess).toContain("sender.isDestroyed()");
     expect(preload).toContain("onSetupOutput");
     expect(app).toContain("appendSetupOutput");
     expect(app).toContain("Live output streams below while the step runs.");

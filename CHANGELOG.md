@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 - 2026-05-14
+
+- Added a destroyed-window guard before sending streamed setup output to the renderer.
+
 ## 0.3.0 - 2026-05-14
 
 - Added live streaming setup output from the Electron main process to the First Run panel.
