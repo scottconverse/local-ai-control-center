@@ -32,7 +32,7 @@ docker run -d --pull=always `
   -e LOG_ALL_EVENTS=true `
   -v /var/run/docker.sock:/var/run/docker.sock `
   -v "${stateDir}:/.openhands" `
-  -p 3000:3000 `
+  -p 127.0.0.1:3000:3000 `
   --add-host host.docker.internal:host-gateway `
   --name openhands-app `
   --restart unless-stopped `

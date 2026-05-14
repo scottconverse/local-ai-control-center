@@ -9,13 +9,13 @@ if ($existingContainer) {
 }
 
 docker run -d --pull=always `
-  -p 8080:8080 `
+  -p 127.0.0.1:8080:8080 `
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 `
   -e WEBUI_AUTH=False `
   -v open-webui:/app/backend/data `
   --add-host host.docker.internal:host-gateway `
   --name open-webui `
-  --restart always `
+  --restart unless-stopped `
   ghcr.io/open-webui/open-webui:main
 
 Write-Host "Open WebUI is starting at http://localhost:8080"

@@ -7,6 +7,8 @@ This setup gives you a single desktop app for two local AI tools powered by Olla
 
 The system runs locally on your machine. Docker hosts the apps, and Ollama hosts the models.
 
+The Docker-hosted web apps bind to `127.0.0.1` only. Do not expose Open WebUI or OpenHands to a network unless you have deliberately enabled authentication and understand the risk.
+
 ## Quick Start
 
 1. Open Docker Desktop.
