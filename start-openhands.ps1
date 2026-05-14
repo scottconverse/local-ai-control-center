@@ -1,7 +1,17 @@
 $ErrorActionPreference = "Stop"
 
-$dockerBin = "C:\Program Files\Docker\Docker\resources\bin"
-$env:Path = "$dockerBin;$env:Path"
+$fallbackDockerBin = "C:\Program Files\Docker\Docker\resources\bin"
+if (Test-Path -LiteralPath $fallbackDockerBin) {
+  $env:Path = "$fallbackDockerBin;$env:Path"
+}
+
+$dockerCommand = if ($env:DOCKER_EXE) {
+  $env:DOCKER_EXE
+} elseif ($env:DOCKER_PATH) {
+  $env:DOCKER_PATH
+} else {
+  "docker"
+}
 
 $stateDir = "$env:USERPROFILE\.openhands"
 $workspaceDir = "$PSScriptRoot\agent-workspace"
@@ -17,12 +27,12 @@ $drive = $resolvedWorkspace.Substring(0, 1).ToLowerInvariant()
 $pathWithoutDrive = $resolvedWorkspace.Substring(2).Replace("\", "/")
 $dockerWorkspacePath = "/run/desktop/mnt/host/$drive$pathWithoutDrive"
 
-$existingContainer = docker ps -aq --filter "name=^openhands-app$"
+$existingContainer = & $dockerCommand ps -aq --filter "name=^openhands-app$"
 if ($existingContainer) {
-  docker rm -f openhands-app | Out-Null
+  & $dockerCommand rm -f openhands-app | Out-Null
 }
 
-docker run -d --pull=always `
+& $dockerCommand run -d --pull=always `
   -e AGENT_SERVER_IMAGE_REPOSITORY=ghcr.io/openhands/agent-server `
   -e AGENT_SERVER_IMAGE_TAG=1.19.1-python `
   -e LLM_MODEL=openai/qwen2.5-coder:14b `

@@ -59,6 +59,8 @@ Open WebUI runs at `http://localhost:8080`.
 
 Ollama runs at `http://127.0.0.1:11434`.
 
+Docker is resolved from `DOCKER_EXE`, `DOCKER_PATH`, the system `PATH`, or the standard Docker Desktop install location.
+
 ## OpenHands
 
 OpenHands is the local coding/agent UI. It can work in a Docker sandbox, read and write project files, and run commands.

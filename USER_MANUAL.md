@@ -9,6 +9,8 @@ The system runs locally on your machine. Docker hosts the apps, and Ollama hosts
 
 The Docker-hosted web apps bind to `127.0.0.1` only. Do not expose Open WebUI or OpenHands to a network unless you have deliberately enabled authentication and understand the risk.
 
+Docker is resolved from `DOCKER_EXE`, `DOCKER_PATH`, the system `PATH`, or the standard Docker Desktop install location.
+
 ## Quick Start
 
 1. Open Docker Desktop.
@@ -232,21 +234,18 @@ Manual Open WebUI start:
 See running Docker containers:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker ps
 ```
 
 Stop OpenHands:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker stop openhands-app
 ```
 
 Stop Open WebUI:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker stop open-webui
 ```
 
@@ -316,23 +315,21 @@ ollama stop qwen2.5-coder:14b
 
 ## Troubleshooting
 
-If `docker` is not recognized in PowerShell, run:
+If `docker` is not recognized in PowerShell, set `DOCKER_EXE` to your Docker-compatible executable path and restart the app. For the default Docker Desktop install, that looks like:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
+$env:DOCKER_EXE = "C:\Program Files\Docker\Docker\resources\bin\docker.exe"
 ```
 
 If OpenHands does not load:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker logs --tail 100 openhands-app
 ```
 
 If Open WebUI does not load:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker logs --tail 100 open-webui
 ```
 
@@ -352,7 +349,6 @@ ollama stop MODEL_NAME
 If a container cannot see Ollama, test the Docker-to-Ollama bridge:
 
 ```powershell
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;$env:Path"
 docker run --rm curlimages/curl:latest -sS http://host.docker.internal:11434/api/tags
 ```
 

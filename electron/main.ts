@@ -2,12 +2,16 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 
 const execFileAsync = promisify(execFile);
 
-const dockerBin = "C:\\Program Files\\Docker\\Docker\\resources\\bin";
-const dockerExe = path.join(dockerBin, "docker.exe");
+const fallbackDockerBin = "C:\\Program Files\\Docker\\Docker\\resources\\bin";
+const dockerExe =
+  process.env.DOCKER_EXE ||
+  process.env.DOCKER_PATH ||
+  (existsSync(path.join(fallbackDockerBin, "docker.exe")) ? path.join(fallbackDockerBin, "docker.exe") : "docker.exe");
 const appRoot = path.resolve(__dirname, "..");
 const workspaceDir = path.join(appRoot, "agent-workspace");
 const openHandsUrl = "http://localhost:3000";
@@ -27,7 +31,7 @@ async function run(command: string, args: string[], timeout = 120_000): Promise<
       windowsHide: true,
       env: {
         ...process.env,
-        PATH: `${dockerBin};${process.env.PATH ?? ""}`
+        PATH: `${fallbackDockerBin};${process.env.PATH ?? ""}`
       }
     });
     return { ok: true, stdout: result.stdout.trim(), stderr: result.stderr.trim() };
