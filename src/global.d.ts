@@ -33,6 +33,7 @@ declare global {
       getStatus: () => Promise<LocalAIStatus>;
       startService: (service: ServiceName) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       stopService: (service: ServiceName) => Promise<{ ok: boolean; stdout: string; stderr: string }>;
+      runTestCommand: (command: "runner" | "llm") => Promise<{ ok: boolean; stdout: string; stderr: string }>;
       openExternal: (target: "workspace" | "manual" | "openhands" | "openwebui") => Promise<void>;
     };
   }

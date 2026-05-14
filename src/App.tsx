@@ -64,6 +64,7 @@ function App() {
   const [status, setStatus] = useState<LocalAIStatus>(fallbackStatus);
   const [busy, setBusy] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState("Ready.");
+  const [testOutput, setTestOutput] = useState("No local runner has been started from this window yet.");
 
   const models = useMemo(() => {
     return status.ollama.models
@@ -102,6 +103,18 @@ function App() {
     const result = await window.localAI.stopService(service);
     setLastMessage(result.ok ? `${label} stopped.` : result.stderr || `Could not stop ${label}.`);
     await refresh();
+  }
+
+  async function runTests(command: "runner" | "llm") {
+    const label = command === "runner" ? "local runner" : "local LLM smoke";
+    setBusy(`test-${command}`);
+    setLastMessage(`Running ${label}...`);
+    setTestOutput(`Running ${label}. This may take a minute.`);
+    const result = await window.localAI.runTestCommand(command);
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n\n");
+    setTestOutput(output || `${label} finished with no output.`);
+    setLastMessage(result.ok ? `${label} passed.` : `${label} failed.`);
+    setBusy(null);
   }
 
   useEffect(() => {
@@ -280,6 +293,27 @@ function App() {
                 </ol>
               </article>
             </div>
+
+            <article className="panel runner-panel">
+              <div className="panel-title">
+                <CheckCircle2 size={22} />
+                <div>
+                  <h3>Local Runner</h3>
+                  <p>Run verification locally first. Remote CI is disabled while GitHub Actions minutes are unavailable.</p>
+                </div>
+              </div>
+              <div className="button-row">
+                <button className="primary" onClick={() => runTests("runner")} disabled={!!busy}>
+                  {busy === "test-runner" ? <Loader2 className="spin" size={17} /> : <Play size={17} />}
+                  Run Local Runner
+                </button>
+                <button onClick={() => runTests("llm")} disabled={!!busy}>
+                  {busy === "test-llm" ? <Loader2 className="spin" size={17} /> : <Bot size={17} />}
+                  Run LLM Smoke
+                </button>
+              </div>
+              <pre className="test-output">{testOutput}</pre>
+            </article>
           </section>
         )}
 

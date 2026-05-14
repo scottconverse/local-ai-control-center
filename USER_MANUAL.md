@@ -274,6 +274,16 @@ nvidia-smi
 
 This project is now a Git-ready product repo.
 
+GitHub Actions is disabled while the account is out of Actions minutes. Use the local runner first.
+
+Double-click:
+
+```text
+C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.vbs
+```
+
+The runner opens the latest log in Notepad when it finishes.
+
 Install dependencies:
 
 ```powershell

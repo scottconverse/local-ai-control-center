@@ -278,6 +278,24 @@ dd {
   line-height: 1.65;
 }
 
+.runner-panel {
+  margin-top: 2px;
+}
+
+.test-output {
+  margin: 16px 0 0;
+  padding: 14px;
+  min-height: 116px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #25221e;
+  color: #f6f1e8;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .embedded {
   height: calc(100vh - 78px);
   background: #e7e2d8;

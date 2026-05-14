@@ -12,6 +12,7 @@
     "test:smoke": "tsx scripts/smoke.ts",
     "test:llm": "tsx scripts/llm-smoke.ts",
     "test:runner": "npm run lint && npm test && npm run build && npm run test:smoke",
+    "runner:local": "powershell -ExecutionPolicy Bypass -File run-local-tests.ps1",
     "lint": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "package:win": "npm run build && electron-builder --win portable"
   },

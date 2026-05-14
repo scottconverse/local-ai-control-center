@@ -134,6 +134,18 @@ Optional local LLM smoke test:
 npm run test:llm
 ```
 
-## CI
+## Local Runner
 
-GitHub Actions runs lint, unit tests, and production build on Windows.
+GitHub Actions is disabled while the account is out of Actions minutes.
+
+Use the local runner first:
+
+```text
+C:\Users\scott\Desktop\local-ai-agent\Run Local Test Runner.vbs
+```
+
+See:
+
+```text
+C:\Users\scott\Desktop\local-ai-agent\RUNNER.md
+```

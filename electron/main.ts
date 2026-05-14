@@ -168,3 +168,8 @@ ipcMain.handle("system:openExternal", async (_event, target: string) => {
     return;
   }
 });
+
+ipcMain.handle("system:runTestCommand", async (_event, command: "runner" | "llm") => {
+  const args = command === "runner" ? ["run", "test:runner"] : ["run", "test:llm"];
+  return run("npm.cmd", args, command === "runner" ? 900_000 : 240_000);
+});

@@ -4,5 +4,6 @@ dist-electron/
 release/
 .vite/
 *.log
+test-results/
 agent-workspace/*
 !agent-workspace/.gitkeep
