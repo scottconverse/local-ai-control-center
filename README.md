@@ -65,6 +65,12 @@ USER_MANUAL.md
 
 ## Marketing Landing Page
 
+Live landing page:
+
+```text
+https://scottconverse.github.io/local-ai-control-center/landing/
+```
+
 Static landing page:
 
 ```text

@@ -1,6 +1,6 @@
 {
   "name": "local-ai-control-center",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "A local-first desktop control center for Ollama, OpenHands, and Open WebUI.",
   "main": "dist-electron/electron/main.js",

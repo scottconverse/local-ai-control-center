@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3 - 2026-05-15
+
+- Added the live GitHub Pages landing URL to the README.
+- Filled in the public GitHub repository description, homepage, and topics.
+
 ## 0.5.2 - 2026-05-14
 
 - Added React coverage for both directions of the custom label editor show/hide toggle.

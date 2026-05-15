@@ -39,7 +39,7 @@ describe("service launcher scripts", () => {
 
   it("tracks the current release version", () => {
     const packageJson = JSON.parse(read("package.json")) as { version: string };
-    expect(packageJson.version).toBe("0.5.2");
+    expect(packageJson.version).toBe("0.5.3");
   });
 
   it("uses relative production assets so the packaged app is not blank", () => {
@@ -278,6 +278,7 @@ describe("service launcher scripts", () => {
     const developer = read("DEVELOPER.md");
 
     expect(packageJson.scripts["screenshots:packaged"]).toBe("node scripts/capture-packaged-screenshots.cjs");
+    expect(readme).toContain("https://scottconverse.github.io/local-ai-control-center/landing/");
     expect(landing).toContain("control-center-first-run.png");
     expect(landing).toContain("Packaged end-to-end screenshots captured from a clean user-data launch");
     expect(landing).toContain("No open items remain from the ordered punch list.");
