@@ -65,13 +65,11 @@ USER_MANUAL.md
 
 ## Marketing Landing Page
 
-Live landing page:
+Published landing page:
 
-```text
-https://scottconverse.github.io/local-ai-control-center/landing/
-```
+[https://scottconverse.github.io/local-ai-control-center/landing/](https://scottconverse.github.io/local-ai-control-center/landing/)
 
-Static landing page:
+The source for that page lives at:
 
 ```text
 landing\index.html
