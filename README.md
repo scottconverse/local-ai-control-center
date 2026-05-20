@@ -1,6 +1,12 @@
 # Local AI Control Center
 
-Local AI Control Center is a Windows-friendly desktop app for running and managing your local Ollama-powered agent stack without using a terminal.
+**Published landing page:** [https://scottconverse.github.io/local-ai-control-center/landing/](https://scottconverse.github.io/local-ai-control-center/landing/)
+
+**Latest Windows download:** [v0.5.5 release](https://github.com/scottconverse/local-ai-control-center/releases/tag/v0.5.5)
+
+**User manual:** [USER_MANUAL.md](USER_MANUAL.md)
+
+Local AI Control Center is a Windows desktop app for running Ollama, OpenHands, and Open WebUI locally without living in the terminal.
 
 It is Windows-only for now and binds local service ports to `127.0.0.1` so OpenHands and Open WebUI are not intentionally exposed to your local network.
 
@@ -63,9 +69,9 @@ Full walkthrough:
 USER_MANUAL.md
 ```
 
-## Marketing Landing Page
+## Landing Page
 
-Published landing page:
+Published product page:
 
 [https://scottconverse.github.io/local-ai-control-center/landing/](https://scottconverse.github.io/local-ai-control-center/landing/)
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.5 - 2026-05-20
+
+- Moved the published landing page, latest release, and user manual links to the top of the README for first-visit clarity.
+
 ## 0.5.4 - 2026-05-15
 
 - Made the published GitHub Pages landing URL the primary landing-page reference in the README.
